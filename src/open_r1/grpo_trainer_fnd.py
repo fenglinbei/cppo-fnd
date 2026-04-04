@@ -507,16 +507,14 @@ class GRPOTrainer(Trainer):
                     "vllm.worker.worker.Worker._assert_memory_footprint_increased_during_profiling", return_value=None
                 )
                 with world_size_patch, profiling_patch:
-                    
-                    print("RANK=", os.environ.get("RANK"))
-                    print("LOCAL_RANK=", os.environ.get("LOCAL_RANK"))
-                    print("WORLD_SIZE=", os.environ.get("WORLD_SIZE"))
-                    print("dist.is_initialized=", torch.distributed.is_initialized())
-                    if torch.distributed.is_initialized():
-                        print("dist.get_world_size()=", torch.distributed.get_world_size())
+
+                    tp_size = dist.get_world_size() 
 
                     self.llm = LLM(
                         model=model.name_or_path,
+                        tensor_parallel_size=tp_size,
+                        pipeline_parallel_size=1,
+                        distributed_executor_backend="external_launcher",
                         device=vllm_device,
                         gpu_memory_utilization=self.args.vllm_gpu_memory_utilization,
                         dtype=self.args.vllm_dtype,
