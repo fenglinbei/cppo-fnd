@@ -273,7 +273,7 @@ def main(script_args, training_args, model_args):
     train_dataset = dataset.map(make_conversation).remove_columns(["label"])
 
     eval_datasets = {
-        "base": dataset["validation"].map(make_conversation)
+        "base": dataset["validation"].map(make_conversation).remove_columns(["label"])
     }
 
     logger.info("*** Initializing model kwargs ***")
