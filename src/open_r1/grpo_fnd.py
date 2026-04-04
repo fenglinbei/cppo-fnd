@@ -256,7 +256,7 @@ def main(script_args, training_args, model_args):
         if training_args.system_prompt is not None:
             prompt.append({"role": "system", "content": training_args.system_prompt})
         
-        print(f"Example keys: {list(example.keys())}")
+        print(f"Example: {example}")
         claim = example["claim"]
         evidence = example["evidence"]
         top_k = training_args.top_k_evidence
