@@ -38,7 +38,7 @@ from transformers import (
     PreTrainedModel,
     PreTrainedTokenizerBase,
     TrainerCallback,
-    is_wandb_available,
+    # is_wandb_available,
     
 )
 from transformers import Trainer
@@ -46,6 +46,7 @@ from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled, is_d
 from transformers.utils import is_peft_available, is_sagemaker_mp_enabled, is_torch_mlu_available, is_torch_mps_available, is_torch_musa_available, is_torch_npu_available, is_torch_xpu_available, is_accelerate_available, is_torch_xla_available
 from transformers.training_args import OptimizerNames, ParallelMode, TrainingArguments
 from transformers.trainer_utils import speed_metrics, SaveStrategy
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 from trl.data_utils import apply_chat_template, is_conversational, maybe_apply_chat_template
 from trl.extras.profiling import profiling_decorator
@@ -60,24 +61,19 @@ from latex2sympy2_extended import NormalizationConfig
 from src.open_r1.rewards_gsm import extract_answer_from_dataset, extract_answer_from_model_output, extract_last_number, extract_single_number
 from itertools import product
 
-from contextlib import contextmanager
+from src.open_r1.rewards_fnd import extract_prediction
 
-@contextmanager
-def suspend_hf_zero3_for_vllm():
-    try:
-        import transformers.integrations.deepspeed as hf_ds
-    except ImportError:
-        import transformers.deepspeed as hf_ds
 
-    prev_ref = getattr(hf_ds, "_hf_deepspeed_config_weak_ref", None)
-    prev_obj = prev_ref() if prev_ref is not None else None
-
-    hf_ds.unset_hf_deepspeed_config()
-    try:
-        yield
-    finally:
-        if prev_obj is not None:
-            hf_ds.set_hf_deepspeed_config(prev_obj)
+ID2LABEL = {
+        0: "PANTS_FIRE",
+        1: "FALSE",
+        2: "BARELY_TRUE",
+        3: "HALF_TRUE",
+        4: "MOSTLY_TRUE",
+        5: "TRUE",
+    }
+LABEL2ID = {v: k for k, v in ID2LABEL.items()}
+LABEL_NAMES = [ID2LABEL[i] for i in range(len(ID2LABEL))]
 
 if is_sagemaker_mp_enabled():
     import smdistributed.modelparallel.torch as smp
@@ -96,8 +92,8 @@ if is_vllm_available():
     from vllm import LLM, SamplingParams
     from vllm.sampling_params import GuidedDecodingParams
 
-if is_wandb_available():
-    import wandb
+# if is_wandb_available():
+#     import wandb
 
 if is_accelerate_available():
     from accelerate import Accelerator, skip_first_batches
@@ -1003,21 +999,23 @@ class GRPOTrainer(Trainer):
         if (
             self.log_completions
             and self.state.global_step % self.args.logging_steps == 0
-            and "wandb" in self.args.report_to
+            and "swanlab" in self.args.report_to
+            and self.accelerator.is_main_process
         ):
-            import pandas as pd
+            import swanlab
 
-            # For logging
-            table = {
-                "step": [str(self.state.global_step)] * len(rewards),
-                "prompt": gather_object(prompts_text),
-                "completion": gather_object(completions_text),
-                "reward": rewards.tolist(),
-            }
-            df = pd.DataFrame(table)
+            gathered_prompts = gather_object(prompts_text)
+            gathered_completions = gather_object(completions_text)
 
-            if wandb.run is not None and self.accelerator.is_main_process:
-                wandb.log({"completions": wandb.Table(dataframe=df)})
+            examples = []
+            for i, (p, c) in enumerate(zip(gathered_prompts[:8], gathered_completions[:8])):
+                examples.append(
+                    swanlab.Text(
+                        f"[sample {i}]\n\n[prompt]\n{p}\n\n[completion]\n{c}"
+                    )
+                )
+
+            swanlab.log({"train/completions": examples}, step=self.state.global_step)
 
         return {
             "prompt_ids": prompt_ids,
@@ -1085,7 +1083,210 @@ class GRPOTrainer(Trainer):
         self._metrics[mode]["clip_ratio"].append(self.accelerator.gather_for_metrics(clip_ratio).mean().item())
         return loss
     
-    def evaluate(self, eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None, ignore_keys: Optional[List[str]] = None, metric_key_prefix: str = "eval") -> Dict[str, float]:
+    def _compute_factcheck_metrics(self, y_true, y_pred, prefix: str) -> dict:
+        """
+        计算 acc / macro_p / macro_r / macro_f1 以及逐类别指标。
+        无法解析的预测用 -1 表示，并单独统计 parse_rate。
+        """
+        metrics = {}
+
+        valid_pred_mask = [p != -1 for p in y_pred]
+        parse_rate = sum(valid_pred_mask) / max(len(valid_pred_mask), 1)
+
+        label_ids = list(ID2LABEL.keys())
+
+        acc = accuracy_score(y_true, y_pred)
+        macro_p, macro_r, macro_f1, _ = precision_recall_fscore_support(
+            y_true,
+            y_pred,
+            labels=label_ids,
+            average="macro",
+            zero_division=0,
+        )
+
+        per_p, per_r, per_f1, per_support = precision_recall_fscore_support(
+            y_true,
+            y_pred,
+            labels=label_ids,
+            average=None,
+            zero_division=0,
+        )
+
+        metrics[f"{prefix}_acc"] = float(acc)
+        metrics[f"{prefix}_macro_p"] = float(macro_p)
+        metrics[f"{prefix}_macro_r"] = float(macro_r)
+        metrics[f"{prefix}_macro_f1"] = float(macro_f1)
+        metrics[f"{prefix}_parse_rate"] = float(parse_rate)
+
+        for i, label_name in ID2LABEL.items():
+            tag = label_name.lower()
+            metrics[f"{prefix}_{tag}_p"] = float(per_p[i])
+            metrics[f"{prefix}_{tag}_r"] = float(per_r[i])
+            metrics[f"{prefix}_{tag}_f1"] = float(per_f1[i])
+            metrics[f"{prefix}_{tag}_support"] = int(per_support[i])
+
+        return metrics
+    
+    def evaluate(
+            self,
+            eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None,
+            ignore_keys: Optional[List[str]] = None,
+            metric_key_prefix: str = "eval",
+        ) -> Dict[str, float]:
+            """
+            fact-checking 评估：
+            - acc
+            - macro_p / macro_r / macro_f1
+            - parse_rate
+            - per-class p/r/f1/support
+            """
+            all_metrics = {}
+
+            target_eval_dataset = eval_dataset if eval_dataset is not None else self.eval_dataset
+            if not isinstance(target_eval_dataset, dict):
+                target_eval_dataset = {"base": target_eval_dataset}
+
+            device = self.accelerator.device
+
+            for dataset_name, dataset_obj in target_eval_dataset.items():
+                eval_dataloader = self.get_eval_dataloader(dataset_obj)
+                pbar = tqdm(eval_dataloader, disable=not self.accelerator.is_main_process)
+
+                local_preds = []
+                local_golds = []
+
+                for inputs in pbar:
+                    prompts_text = [
+                        maybe_apply_chat_template(example, self.processing_class)["prompt"]
+                        for example in inputs
+                    ]
+                    gold_labels = [int(x["gold_label"]) for x in inputs]
+
+                    prompt_inputs = self.processing_class(
+                        prompts_text,
+                        return_tensors="pt",
+                        padding=True,
+                        padding_side="left",
+                        add_special_tokens=False,
+                    )
+                    prompt_inputs = super()._prepare_inputs(prompt_inputs)
+                    prompt_ids = prompt_inputs["input_ids"]
+                    prompt_mask = prompt_inputs["attention_mask"]
+
+                    if self.max_prompt_length is not None:
+                        prompt_ids = prompt_ids[:, -self.max_prompt_length:]
+                        prompt_mask = prompt_mask[:, -self.max_prompt_length:]
+
+                    if self.args.use_vllm:
+                        if self.state.global_step != self._last_loaded_step:
+                            self._move_model_to_vllm()
+                            self._last_loaded_step = self.state.global_step
+
+                        all_prompts_text = gather_object(prompts_text)
+
+                        if self.accelerator.is_main_process:
+                            if self.args.vllm_guided_decoding_regex is not None:
+                                guided_decoding = GuidedDecodingParams(
+                                    backend="outlines",
+                                    regex=self.args.vllm_guided_decoding_regex,
+                                )
+                            else:
+                                guided_decoding = None
+
+                            inference_sampling_params = SamplingParams(
+                                temperature=0.0,
+                                max_tokens=self.max_completion_length,
+                                guided_decoding=guided_decoding,
+                                n=1,
+                            )
+
+                            all_outputs = self.llm.generate(
+                                all_prompts_text,
+                                sampling_params=inference_sampling_params,
+                                use_tqdm=False,
+                            )
+
+                            completion_ids = [
+                                output.outputs[0].token_ids
+                                for output in all_outputs
+                            ]
+                        else:
+                            completion_ids = [None] * len(all_prompts_text)
+
+                        completion_ids = broadcast_object_list(completion_ids, from_process=0)
+
+                        process_slice = slice(
+                            self.accelerator.process_index * len(prompts_text),
+                            (self.accelerator.process_index + 1) * len(prompts_text),
+                        )
+                        completion_ids = completion_ids[process_slice]
+
+                        completion_ids = [torch.tensor(ids, device=device) for ids in completion_ids]
+                        completion_ids = pad(
+                            completion_ids,
+                            padding_value=self.processing_class.pad_token_id
+                        )
+                        completions_text = self.processing_class.batch_decode(
+                            completion_ids,
+                            skip_special_tokens=True
+                        )
+
+                    else:
+                        with unwrap_model_for_generation(self.model, self.accelerator) as unwrapped_model:
+                            prompt_completion_ids = unwrapped_model.generate(
+                                prompt_ids,
+                                attention_mask=prompt_mask,
+                                generation_config=GenerationConfig(
+                                    max_new_tokens=self.max_completion_length,
+                                    do_sample=False,
+                                    temperature=0.0,
+                                    pad_token_id=self.processing_class.pad_token_id,
+                                ),
+                            )
+
+                        prompt_length = prompt_ids.size(1)
+                        completion_ids = prompt_completion_ids[:, prompt_length:]
+                        completions_text = self.processing_class.batch_decode(
+                            completion_ids,
+                            skip_special_tokens=True
+                        )
+
+                    pred_labels = [extract_prediction(x)["label"] for x in completions_text]
+
+                    local_preds.extend(pred_labels)
+                    local_golds.extend(gold_labels)
+
+                gathered_preds = gather_object(local_preds)
+                gathered_golds = gather_object(local_golds)
+
+                if self.accelerator.is_main_process:
+                    prefix = f"{metric_key_prefix}_{dataset_name}"
+
+                    metrics = self._compute_factcheck_metrics(
+                        y_true=gathered_golds,
+                        y_pred=gathered_preds,
+                        prefix=prefix,
+                    )
+
+                    # base 数据集再额外打一份无 dataset_name 前缀的主指标，方便 best model 监控
+                    if dataset_name == "base":
+                        metrics[f"{metric_key_prefix}_acc"] = metrics[f"{prefix}_acc"]
+                        metrics[f"{metric_key_prefix}_macro_p"] = metrics[f"{prefix}_macro_p"]
+                        metrics[f"{metric_key_prefix}_macro_r"] = metrics[f"{prefix}_macro_r"]
+                        metrics[f"{metric_key_prefix}_macro_f1"] = metrics[f"{prefix}_macro_f1"]
+                        metrics[f"{metric_key_prefix}_parse_rate"] = metrics[f"{prefix}_parse_rate"]
+
+                    all_metrics.update(metrics)
+
+                    print(f"\n[{dataset_name}] acc={metrics[f'{prefix}_acc']:.4f} "
+                        f"macro_f1={metrics[f'{prefix}_macro_f1']:.4f} "
+                        f"parse_rate={metrics[f'{prefix}_parse_rate']:.4f}")
+
+                self.accelerator.wait_for_everyone()
+
+            return all_metrics
+    
+    def math_evaluate(self, eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None, ignore_keys: Optional[List[str]] = None, metric_key_prefix: str = "eval") -> Dict[str, float]:
         metric = {}
         metric['eval_accuracy'] = 0
         for dataset in self.eval_dataset.keys():
@@ -1391,7 +1592,7 @@ class GRPOTrainer(Trainer):
             hub_model_id=self.hub_model_id,
             dataset_name=dataset_name,
             tags=tags,
-            wandb_url=wandb.run.get_url() if is_wandb_available() and wandb.run is not None else None,
+            wandb_url=None,
             comet_url=get_comet_experiment_url(),
             trainer_name="GRPO",
             trainer_citation=citation,

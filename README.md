@@ -44,6 +44,7 @@ This paper introduces Completion Pruning Policy Optimization (CPPO) to accelerat
 conda create -p /data/liaozijie/conda/cppo python=3.11
 conda activate /data/liaozijie/conda/cppo
 pip install vllm==0.7.2
+pip install swanlab
 pip install -U "transformers<5"
 pip install mergekit==0.1.4
 pip install llm_blender==0.0.2

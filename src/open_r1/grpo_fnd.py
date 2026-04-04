@@ -37,7 +37,7 @@ from src.open_r1.rewards_fnd import (
 )
 from src.open_r1.utils import get_tokenizer
 from src.open_r1.utils.callbacks import get_callbacks
-from src.open_r1.utils.wandb_logging import init_wandb_training
+# from src.open_r1.utils.wandb_logging import init_wandb_training
 from trl import  ModelConfig, ScriptArguments, TrlParser, get_peft_config
 import random 
 import numpy as np
@@ -215,8 +215,8 @@ def main(script_args, training_args, model_args):
     if last_checkpoint is not None and training_args.resume_from_checkpoint is None:
         logger.info(f"Checkpoint detected, resuming training at {last_checkpoint=}.")
 
-    if "wandb" in training_args.report_to:
-        init_wandb_training(training_args)
+    # if "wandb" in training_args.report_to:
+    #     init_wandb_training(training_args)
 
     # Load the dataset
     dataset = load_from_disk(script_args.dataset_name)
@@ -272,7 +272,9 @@ def main(script_args, training_args, model_args):
     
     train_dataset = dataset.map(make_conversation).remove_columns(["label"])
 
-    eval_datasets = {"base": dataset["validation"]}
+    eval_datasets = {
+        "base": dataset["validation"].map(make_conversation)
+    }
 
     logger.info("*** Initializing model kwargs ***")
     torch_dtype = (

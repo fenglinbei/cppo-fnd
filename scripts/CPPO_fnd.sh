@@ -1,5 +1,4 @@
-export WANDB_CONSOLE=off 
-export WANDB_MODE=offline
+export SWANLAB_PROJECT="factcheck-grpo"
 accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
     --num_processes=1  \
     --main_process_port 10909 \
