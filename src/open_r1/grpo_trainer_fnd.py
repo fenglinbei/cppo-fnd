@@ -508,7 +508,7 @@ class GRPOTrainer(Trainer):
                 )
                 with world_size_patch, profiling_patch:
 
-                    tp_size = dist.get_world_size() 
+                    tp_size = torch.distributed.get_world_size() 
 
                     self.llm = LLM(
                         model=model.name_or_path,
