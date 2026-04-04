@@ -271,8 +271,8 @@ def factcheck_explanation_quality_reward(completions, **kwargs):
 
 def factcheck_grounding_reward(
     completions,
-    evidences,
-    claims,
+    evidence,
+    claim,
     **kwargs,
 ):
     """
@@ -284,7 +284,8 @@ def factcheck_grounding_reward(
     注意：这是弱约束，不是严格事实核验器。
     """
     contents = [completion[0]["content"] for completion in completions]
-
+    evidences = [evidence * len(completions)]
+    claims = [claim * len(completions)]
     rewards = []
     for content, evs, cl in zip(contents, evidences, claims):
         explanation = extract_prediction(content)["explanation"]
