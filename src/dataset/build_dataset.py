@@ -109,12 +109,12 @@ def build_hf_dataset_dict(
 
 
 if __name__ == "__main__":
-    # ds = build_hf_dataset_dict(
-    #     train_path="data/LIAR-RAW/train.json",
-    #     val_path="data/LIAR-RAW/val.json",
-    #     test_path="data/LIAR-RAW/test.json",
-    #     output_dir="data/liar-raw",
-    # )
+    ds = build_hf_dataset_dict(
+        train_path="data/LIAR-RAW/train.json",
+        val_path="data/LIAR-RAW/val.json",
+        test_path="data/LIAR-RAW/test.json",
+        output_dir="data/liar-raw",
+    )
 
     # print(ds)
     # print(ds["train"].features)
@@ -125,6 +125,6 @@ if __name__ == "__main__":
     # print(ds2)
     # print(ds2["train"])
 
-    dataset = load_dataset("data/liar-raw")
-    print(dataset)
+    dataset = load_from_disk("data/liar-raw")
+    print(dataset["train"][0])
 

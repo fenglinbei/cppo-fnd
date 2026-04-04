@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 import datasets
 import torch
 import transformers
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
 
@@ -219,7 +219,7 @@ def main(script_args, training_args, model_args):
         init_wandb_training(training_args)
 
     # Load the dataset
-    dataset = load_dataset(path=script_args.dataset_name)
+    dataset = load_from_disk(script_args.dataset_name)
     
     eval_datasets = {"base": dataset["validation"]}
 
@@ -272,7 +272,6 @@ def main(script_args, training_args, model_args):
             n = min(training_args.sample_num, len(dataset[split]))
             dataset[split] = dataset[split].select(range(n))
     
-    print(dataset)
     dataset = dataset.map(make_conversation)
 
     eval_datasets = {"base": dataset["validation"]}
