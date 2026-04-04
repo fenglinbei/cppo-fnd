@@ -290,7 +290,7 @@ def main(script_args, training_args, model_args):
     #############################
     # Initialize the GRPO trainer
     #############################
-    print(dataset[script_args.dataset_train_split][0])
+    print(train_dataset[script_args.dataset_train_split][0])
 
     trainer = GRPOTrainer(
         model=model_args.model_name_or_path,
