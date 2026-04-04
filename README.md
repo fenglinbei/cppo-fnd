@@ -49,6 +49,13 @@ pip install flash-attn --no-build-isolation
 pip install -e ".[dev]"
 ```
 
+### 1.5. Download model
+```
+pip install modelscope
+mkdir models
+modelscope download --model Qwen/Qwen3-0.6B --local_dir ./models/Qwen3-0.6B
+```
+
 ### 2. GSM8K:
 
 #### Training
