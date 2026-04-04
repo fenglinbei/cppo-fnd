@@ -1,7 +1,9 @@
 export WANDB_CONSOLE=off 
 export WANDB_MODE=offline
 accelerate launch  --config_file recipes/accelerate_configs/zero3.yaml \
-    --num_processes=3  src/open_r1/grpo_fnd.py \
+    --num_processes=3  \
+    --main_process_port 0 \
+    src/open_r1/grpo_fnd.py \
     --config recipes/fnd/Qwen3-0.6B.yaml \
     --output_dir=output/fnd/ \
     --save_strategy='best' \
@@ -10,4 +12,3 @@ accelerate launch  --config_file recipes/accelerate_configs/zero3.yaml \
     --dataset_name=data/liar-raw \
     --num_generations=16 \
     --log_level=debug \
-    --main_process_port 0
