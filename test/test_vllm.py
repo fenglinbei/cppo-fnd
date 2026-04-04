@@ -5,6 +5,7 @@ llm = LLM(
     tensor_parallel_size=1,
     trust_remote_code=True,
     model_impl="transformers",
+    gpu_memory_utilization=0.5
 )
 
 outs = llm.generate(["Hello"], SamplingParams(max_tokens=8))
