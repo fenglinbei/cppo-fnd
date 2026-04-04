@@ -255,8 +255,7 @@ def main(script_args, training_args, model_args):
         prompt = []
         if training_args.system_prompt is not None:
             prompt.append({"role": "system", "content": training_args.system_prompt})
-        
-        print(f"Example: {example}")
+        print(training_args)
         claim = example["claim"]
         evidence = example["evidence"]
         top_k = training_args.top_k_evidence
