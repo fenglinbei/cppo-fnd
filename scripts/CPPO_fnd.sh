@@ -9,4 +9,5 @@ accelerate launch  --config_file recipes/accelerate_configs/zero3.yaml \
     --model_name_or_path=./models/Qwen3-0.6B \
     --dataset_name=data/liar-raw \
     --num_generations=16 \
-    --log_level=debug
+    --log_level=debug \
+    --main_process_port=10909
