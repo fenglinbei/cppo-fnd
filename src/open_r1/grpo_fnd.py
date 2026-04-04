@@ -258,9 +258,8 @@ def main(script_args, training_args, model_args):
 
         claim = example["claim"]
         evidence = example["evidence"]
-        top_k = script_args.top_k_evidence
         if evidence:
-            evidence_text = "\n".join([f"{i+1}. {ev}" for i, ev in enumerate(evidence[:top_k])])
+            evidence_text = "\n".join([f"{i+1}. {ev}" for i, ev in enumerate(evidence[:5])])
         else:
             evidence_text = "No evidence provided."
         prompt.append({"role": "user", "content": f"Claim:\n{claim}\n\nEvidence:\n{evidence_text}\n"})

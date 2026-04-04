@@ -12,5 +12,4 @@ accelerate launch  --config_file recipes/accelerate_configs/zero3.yaml \
     --dataset_name=data/liar-raw \
     --num_generations=16 \
     --log_level=debug \
-    --dataset_train_split=train \
-    --top_k_evidence=5
+    --dataset_train_split=train
