@@ -59,6 +59,26 @@ from tqdm import tqdm
 from latex2sympy2_extended import NormalizationConfig
 from src.open_r1.rewards_gsm import extract_answer_from_dataset, extract_answer_from_model_output, extract_last_number, extract_single_number
 from itertools import product
+
+from contextlib import contextmanager
+
+@contextmanager
+def suspend_hf_zero3_for_vllm():
+    try:
+        import transformers.integrations.deepspeed as hf_ds
+    except ImportError:
+        import transformers.deepspeed as hf_ds
+
+    prev_ref = getattr(hf_ds, "_hf_deepspeed_config_weak_ref", None)
+    prev_obj = prev_ref() if prev_ref is not None else None
+
+    hf_ds.unset_hf_deepspeed_config()
+    try:
+        yield
+    finally:
+        if prev_obj is not None:
+            hf_ds.set_hf_deepspeed_config(prev_obj)
+
 if is_sagemaker_mp_enabled():
     import smdistributed.modelparallel.torch as smp
     from smdistributed.modelparallel import __version__ as SMP_VERSION
@@ -506,7 +526,7 @@ class GRPOTrainer(Trainer):
                 profiling_patch = patch(
                     "vllm.worker.worker.Worker._assert_memory_footprint_increased_during_profiling", return_value=None
                 )
-                with world_size_patch, profiling_patch:
+                with world_size_patch, profiling_patch, suspend_hf_zero3_for_vllm():
 
                     tp_size = torch.distributed.get_world_size() 
 
