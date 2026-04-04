@@ -219,7 +219,7 @@ def main(script_args, training_args, model_args):
         init_wandb_training(training_args)
 
     # Load the dataset
-    dataset = load_dataset(path=script_args.dataset_path)
+    dataset = load_dataset(path=script_args.dataset_name)
     
     eval_datasets = {"base": dataset["validation"]}
 
