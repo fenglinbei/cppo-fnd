@@ -272,7 +272,7 @@ def main(script_args, training_args, model_args):
             n = min(training_args.sample_num, len(dataset[split]))
             dataset[split] = dataset[split].select(range(n))
     
-    
+    print(dataset)
     dataset = dataset.map(make_conversation)
 
     eval_datasets = {"base": dataset["validation"]}
