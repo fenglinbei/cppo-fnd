@@ -526,7 +526,7 @@ class GRPOTrainer(Trainer):
                 profiling_patch = patch(
                     "vllm.worker.worker.Worker._assert_memory_footprint_increased_during_profiling", return_value=None
                 )
-                with world_size_patch, profiling_patch, suspend_hf_zero3_for_vllm():
+                with world_size_patch, profiling_patch:
 
                     tp_size = torch.distributed.get_world_size() 
 
