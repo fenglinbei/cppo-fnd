@@ -174,7 +174,7 @@ def factcheck_tag_count_reward(completions, **kwargs):
     return [count_tags(c) for c in contents]
 
 
-def factcheck_label_reward(completions, gold_label=None, label=None, **kwargs):
+def factcheck_label_reward(completions, gold_label=None, **kwargs):
     """
     主奖励：exact label match
     exact = 2.0
@@ -182,7 +182,7 @@ def factcheck_label_reward(completions, gold_label=None, label=None, **kwargs):
     valid but wrong = 0.0
     """
     contents = [completion[0]["content"] for completion in completions]
-    golds = _resolve_gold_labels(gold_label=gold_label, label=label, **kwargs)
+    golds = _resolve_gold_labels(gold_label=gold_label, **kwargs)
 
     rewards = []
     for content, gold in zip(contents, golds):
@@ -198,7 +198,7 @@ def factcheck_label_reward(completions, gold_label=None, label=None, **kwargs):
     return rewards
 
 
-def factcheck_ordinal_reward(completions, gold_label=None, label=None, **kwargs):
+def factcheck_ordinal_reward(completions, gold_label=None, **kwargs):
     """
     六分类有明显序关系时使用：
     PANTS_FIRE < FALSE < BARELY_TRUE < HALF_TRUE < MOSTLY_TRUE < TRUE
@@ -207,7 +207,7 @@ def factcheck_ordinal_reward(completions, gold_label=None, label=None, **kwargs)
     exact 也会得到这部分奖励，因此这是“辅助项”。
     """
     contents = [completion[0]["content"] for completion in completions]
-    golds = _resolve_gold_labels(gold_label=gold_label, label=label, **kwargs)
+    golds = _resolve_gold_labels(gold_label=gold_label, **kwargs)
 
     rewards = []
     for content, gold in zip(contents, golds):

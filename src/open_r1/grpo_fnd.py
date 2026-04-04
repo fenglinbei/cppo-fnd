@@ -263,14 +263,14 @@ def main(script_args, training_args, model_args):
         else:
             evidence_text = "No evidence provided."
         prompt.append({"role": "user", "content": f"Claim:\n{claim}\n\nEvidence:\n{evidence_text}\n"})
-        return {"prompt": prompt}
+        return {"prompt": prompt, "gold_label": example["label"]}
 
     if training_args.sample_num != 0:
         for split in dataset:
             n = min(training_args.sample_num, len(dataset[split]))
             dataset[split] = dataset[split].select(range(n))
     
-    train_dataset = dataset.map(make_conversation).select_columns(["prompt"])
+    train_dataset = dataset.map(make_conversation).remove_columns(["label"])
 
     eval_datasets = {"base": dataset["validation"]}
 
