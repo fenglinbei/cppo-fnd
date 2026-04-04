@@ -1,0 +1,38 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "id": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "claim": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "label": {
+      "names": [
+        "PANTS_FIRE",
+        "FALSE",
+        "BARELY_TRUE",
+        "HALF_TRUE",
+        "MOSTLY_TRUE",
+        "TRUE"
+      ],
+      "_type": "ClassLabel"
+    },
+    "explanation": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "evidence": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "List"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}
