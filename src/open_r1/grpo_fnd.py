@@ -255,10 +255,10 @@ def main(script_args, training_args, model_args):
         prompt = []
         if training_args.system_prompt is not None:
             prompt.append({"role": "system", "content": training_args.system_prompt})
-            
+
         claim = example["claim"]
         evidence = example["evidence"]
-        top_k = training_args.top_k_evidence
+        top_k = script_args.top_k_evidence
         if evidence:
             evidence_text = "\n".join([f"{i+1}. {ev}" for i, ev in enumerate(evidence[:top_k])])
         else:
