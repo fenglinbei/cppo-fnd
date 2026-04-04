@@ -6,6 +6,7 @@ attn_implementation: flash_attention_2
 
 # Data training arguments
 dataset_path: data/liar-raw
+top_k_evidence: 5
 system_prompt: "You are a fact-checking assistant.\n\nGiven a claim and its evidence, do the following:\n1. Write a concise justification based only on the provided evidence.\n2. Predict exactly one label from:\nPANTS_FIRE, FALSE, BARELY_TRUE, HALF_TRUE, MOSTLY_TRUE, TRUE\n\nReturn exactly in this format:\n\n<explanation>\nbrief justification\n</explanation>\n<answer>\nONE_LABEL\n</answer>\n\nDo not output any extra text.\n"
 
 # GRPO trainer config
