@@ -199,6 +199,13 @@ def main(script_args, training_args, model_args):
     transformers.utils.logging.enable_default_handler()
     transformers.utils.logging.enable_explicit_format()
 
+    print("RANK=", os.environ.get("RANK"))
+    print("LOCAL_RANK=", os.environ.get("LOCAL_RANK"))
+    print("WORLD_SIZE=", os.environ.get("WORLD_SIZE"))
+    print("dist.is_initialized=", torch.distributed.is_initialized())
+    if torch.distributed.is_initialized():
+        print("dist.get_world_size()=", torch.distributed.get_world_size())
+
     # Log on each process a small summary
     logger.warning(
         f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
