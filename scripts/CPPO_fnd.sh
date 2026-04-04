@@ -1,5 +1,6 @@
 export WANDB_CONSOLE=off 
 export WANDB_MODE=offline
+export MAIN_PROCESS_PORT=0
 accelerate launch  --config_file recipes/accelerate_configs/zero3.yaml \
     --num_processes=3  src/open_r1/grpo_fnd.py \
     --config recipes/fnd/Qwen3-0.6B.yaml \
