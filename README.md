@@ -48,10 +48,6 @@ pip install vllm==0.7.2
 pip install setuptools
 pip install flash-attn --no-build-isolation
 pip install -e ".[dev]"
-pip install swanlab
-pip install transformers==5.5
-pip install mergekit
-pip install llm_blender
 ```
 
 ### 1.5. Download model
