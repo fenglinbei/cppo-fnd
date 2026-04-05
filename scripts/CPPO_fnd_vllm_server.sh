@@ -5,12 +5,12 @@ export CUDA_LAUNCH_BLOCKING=1
 accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
     --num_processes=3  \
     --main_process_port 20909 \
-    src/open_r1/grpo_fnd.py \
+    src/open_r1/grpo_fnd_vllm_server.py \
     --config recipes/fnd/Qwen3-0.6B_vllm_server.yaml \
     --output_dir=output/fnd/ \
     --save_strategy='best' \
-    --eval_steps=100 --max_completion_length=1024 \
-    --model_name_or_path=./models/Qwen2.5-1.5B-Instruct \
+    --eval_steps=500 --max_completion_length=1024 \
+    --model_name_or_path=./models/Qwen3-0.6B \
     --dataset_name=data/liar-raw \
     --num_generations=12 \
     --log_level=info \
