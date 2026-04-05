@@ -1124,163 +1124,162 @@ class GRPOTrainer(Trainer):
         return metrics
     
     def evaluate(
-            self,
-            eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None,
-            ignore_keys: Optional[List[str]] = None,
-            metric_key_prefix: str = "eval",
-        ) -> Dict[str, float]:
-            """
-            fact-checking 评估：
-            - acc
-            - macro_p / macro_r / macro_f1
-            - parse_rate
-            - per-class p/r/f1/support
-            """
-            all_metrics = {}
+        self,
+        eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None,
+        ignore_keys: Optional[List[str]] = None,
+        metric_key_prefix: str = "eval",
+    ) -> Dict[str, float]:
+        all_metrics = {}
 
-            target_eval_dataset = eval_dataset if eval_dataset is not None else self.eval_dataset
-            if not isinstance(target_eval_dataset, dict):
-                target_eval_dataset = {"base": target_eval_dataset}
+        target_eval_dataset = eval_dataset if eval_dataset is not None else self.eval_dataset
+        if not isinstance(target_eval_dataset, dict):
+            target_eval_dataset = {"base": target_eval_dataset}
 
-            device = self.accelerator.device
+        device = self.accelerator.device
 
-            for dataset_name, dataset_obj in target_eval_dataset.items():
-                eval_dataloader = self.get_eval_dataloader(dataset_obj)
-                pbar = tqdm(eval_dataloader, disable=not self.accelerator.is_main_process)
+        for dataset_name, dataset_obj in target_eval_dataset.items():
+            eval_dataloader = self.get_eval_dataloader(dataset_obj)
+            pbar = tqdm(eval_dataloader, disable=not self.accelerator.is_main_process)
 
-                local_preds = []
-                local_golds = []
+            local_preds = []
+            local_golds = []
 
-                for inputs in pbar:
-                    prompts_text = [
-                        maybe_apply_chat_template(example, self.processing_class)["prompt"]
-                        for example in inputs
-                    ]
-                    gold_labels = [int(x["gold_label"]) for x in inputs]
+            for inputs in pbar:
+                prompts_text = [
+                    maybe_apply_chat_template(example, self.processing_class)["prompt"]
+                    for example in inputs
+                ]
+                gold_labels = [int(x["gold_label"]) for x in inputs]
 
-                    prompt_inputs = self.processing_class(
-                        prompts_text,
-                        return_tensors="pt",
-                        padding=True,
-                        padding_side="left",
-                        add_special_tokens=False,
-                    )
-                    prompt_inputs = super()._prepare_inputs(prompt_inputs)
-                    prompt_ids = prompt_inputs["input_ids"]
-                    prompt_mask = prompt_inputs["attention_mask"]
+                prompt_inputs = self.processing_class(
+                    prompts_text,
+                    return_tensors="pt",
+                    padding=True,
+                    padding_side="left",
+                    add_special_tokens=False,
+                )
+                prompt_inputs = super()._prepare_inputs(prompt_inputs)
+                prompt_ids = prompt_inputs["input_ids"]
+                prompt_mask = prompt_inputs["attention_mask"]
 
-                    if self.max_prompt_length is not None:
-                        prompt_ids = prompt_ids[:, -self.max_prompt_length:]
-                        prompt_mask = prompt_mask[:, -self.max_prompt_length:]
+                if self.max_prompt_length is not None:
+                    prompt_ids = prompt_ids[:, -self.max_prompt_length:]
+                    prompt_mask = prompt_mask[:, -self.max_prompt_length:]
 
-                    if self.args.use_vllm:
-                        if self.state.global_step != self._last_loaded_step:
-                            self._move_model_to_vllm()
-                            self._last_loaded_step = self.state.global_step
+                if self.args.use_vllm:
+                    if self.state.global_step != self._last_loaded_step:
+                        self._move_model_to_vllm()
+                        self._last_loaded_step = self.state.global_step
 
-                        all_prompts_text = gather_object(prompts_text)
+                    all_prompts_text = gather_object(prompts_text)
 
-                        if self.accelerator.is_main_process:
-                            if self.args.vllm_guided_decoding_regex is not None:
-                                guided_decoding = GuidedDecodingParams(
-                                    backend="outlines",
-                                    regex=self.args.vllm_guided_decoding_regex,
-                                )
-                            else:
-                                guided_decoding = None
-
-                            inference_sampling_params = SamplingParams(
-                                temperature=0.0,
-                                max_tokens=self.max_completion_length,
-                                guided_decoding=guided_decoding,
-                                n=1,
+                    if self.accelerator.is_main_process:
+                        guided_decoding = (
+                            GuidedDecodingParams(
+                                backend="outlines",
+                                regex=self.args.vllm_guided_decoding_regex,
                             )
-
-                            all_outputs = self.llm.generate(
-                                all_prompts_text,
-                                sampling_params=inference_sampling_params,
-                                use_tqdm=False,
-                            )
-
-                            completion_ids = [
-                                output.outputs[0].token_ids
-                                for output in all_outputs
-                            ]
-                        else:
-                            completion_ids = [None] * len(all_prompts_text)
-
-                        completion_ids = broadcast_object_list(completion_ids, from_process=0)
-
-                        process_slice = slice(
-                            self.accelerator.process_index * len(prompts_text),
-                            (self.accelerator.process_index + 1) * len(prompts_text),
-                        )
-                        completion_ids = completion_ids[process_slice]
-
-                        completion_ids = [torch.tensor(ids, device=device) for ids in completion_ids]
-                        completion_ids = pad(
-                            completion_ids,
-                            padding_value=self.processing_class.pad_token_id
-                        )
-                        completions_text = self.processing_class.batch_decode(
-                            completion_ids,
-                            skip_special_tokens=True
+                            if self.args.vllm_guided_decoding_regex is not None
+                            else None
                         )
 
+                        inference_sampling_params = SamplingParams(
+                            temperature=0.0,
+                            max_tokens=self.max_completion_length,
+                            guided_decoding=guided_decoding,
+                            n=1,
+                        )
+
+                        all_outputs = self.llm.generate(
+                            all_prompts_text,
+                            sampling_params=inference_sampling_params,
+                            use_tqdm=False,
+                        )
+                        completion_ids = [out.outputs[0].token_ids for out in all_outputs]
                     else:
-                        with unwrap_model_for_generation(self.model, self.accelerator) as unwrapped_model:
-                            prompt_completion_ids = unwrapped_model.generate(
-                                prompt_ids,
-                                attention_mask=prompt_mask,
-                                generation_config=GenerationConfig(
-                                    max_new_tokens=self.max_completion_length,
-                                    do_sample=False,
-                                    temperature=0.0,
-                                    pad_token_id=self.processing_class.pad_token_id,
-                                ),
-                            )
+                        completion_ids = [None] * len(all_prompts_text)
 
-                        prompt_length = prompt_ids.size(1)
-                        completion_ids = prompt_completion_ids[:, prompt_length:]
-                        completions_text = self.processing_class.batch_decode(
-                            completion_ids,
-                            skip_special_tokens=True
+                    completion_ids = broadcast_object_list(completion_ids, from_process=0)
+
+                    process_slice = slice(
+                        self.accelerator.process_index * len(prompts_text),
+                        (self.accelerator.process_index + 1) * len(prompts_text),
+                    )
+                    completion_ids = completion_ids[process_slice]
+
+                    completion_ids = [torch.tensor(ids, device=device) for ids in completion_ids]
+                    completion_ids = pad(
+                        completion_ids,
+                        padding_value=self.processing_class.pad_token_id
+                    )
+                    completions_text = self.processing_class.batch_decode(
+                        completion_ids,
+                        skip_special_tokens=True
+                    )
+                else:
+                    with unwrap_model_for_generation(self.model, self.accelerator) as unwrapped_model:
+                        prompt_completion_ids = unwrapped_model.generate(
+                            prompt_ids,
+                            attention_mask=prompt_mask,
+                            generation_config=GenerationConfig(
+                                max_new_tokens=self.max_completion_length,
+                                do_sample=False,
+                                temperature=0.0,
+                                pad_token_id=self.processing_class.pad_token_id,
+                            ),
                         )
 
-                    pred_labels = [LABEL2ID.get(extract_prediction(x)["label"], -1) for x in completions_text]
-
-                    local_preds.extend(pred_labels)
-                    local_golds.extend(gold_labels)
-
-                gathered_preds = gather_object(local_preds)
-                gathered_golds = gather_object(local_golds)
-
-                if self.accelerator.is_main_process:
-                    prefix = f"{metric_key_prefix}_{dataset_name}"
-
-                    metrics = self._compute_factcheck_metrics(
-                        y_true=gathered_golds,
-                        y_pred=gathered_preds,
-                        prefix=prefix,
+                    prompt_length = prompt_ids.size(1)
+                    completion_ids = prompt_completion_ids[:, prompt_length:]
+                    completions_text = self.processing_class.batch_decode(
+                        completion_ids,
+                        skip_special_tokens=True
                     )
 
-                    # base 数据集再额外打一份无 dataset_name 前缀的主指标，方便 best model 监控
-                    if dataset_name == "base":
-                        metrics[f"{metric_key_prefix}_acc"] = metrics[f"{prefix}_acc"]
-                        metrics[f"{metric_key_prefix}_macro_p"] = metrics[f"{prefix}_macro_p"]
-                        metrics[f"{metric_key_prefix}_macro_r"] = metrics[f"{prefix}_macro_r"]
-                        metrics[f"{metric_key_prefix}_macro_f1"] = metrics[f"{prefix}_macro_f1"]
-                        metrics[f"{metric_key_prefix}_parse_rate"] = metrics[f"{prefix}_parse_rate"]
+                pred_labels = [LABEL2ID.get(extract_prediction(x)["label"], -1) for x in completions_text]
+                local_preds.extend(pred_labels)
+                local_golds.extend(gold_labels)
 
-                    all_metrics.update(metrics)
+            gathered_preds = gather_object(local_preds)
+            gathered_golds = gather_object(local_golds)
 
-                    print(f"\n[{dataset_name}] acc={metrics[f'{prefix}_acc']:.4f} "
-                        f"macro_f1={metrics[f'{prefix}_macro_f1']:.4f} "
-                        f"parse_rate={metrics[f'{prefix}_parse_rate']:.4f}")
+            if self.accelerator.is_main_process:
+                # 某些 accelerate 版本 gather_object(list) 可能返回 list-of-lists
+                if len(gathered_preds) > 0 and isinstance(gathered_preds[0], list):
+                    gathered_preds = [x for sub in gathered_preds for x in sub]
+                if len(gathered_golds) > 0 and isinstance(gathered_golds[0], list):
+                    gathered_golds = [x for sub in gathered_golds for x in sub]
 
-                self.accelerator.wait_for_everyone()
+                prefix = f"{metric_key_prefix}_{dataset_name}"
+                metrics = self._compute_factcheck_metrics(
+                    y_true=gathered_golds,
+                    y_pred=gathered_preds,
+                    prefix=prefix,
+                )
 
-            return all_metrics
+                if dataset_name == "base":
+                    metrics[f"{metric_key_prefix}_acc"] = metrics[f"{prefix}_acc"]
+                    metrics[f"{metric_key_prefix}_macro_p"] = metrics[f"{prefix}_macro_p"]
+                    metrics[f"{metric_key_prefix}_macro_r"] = metrics[f"{prefix}_macro_r"]
+                    metrics[f"{metric_key_prefix}_macro_f1"] = metrics[f"{prefix}_macro_f1"]
+                    metrics[f"{metric_key_prefix}_parse_rate"] = metrics[f"{prefix}_parse_rate"]
+
+                all_metrics.update(metrics)
+
+                print(
+                    f"\n[{dataset_name}] "
+                    f"acc={metrics[f'{prefix}_acc']:.4f} "
+                    f"macro_f1={metrics[f'{prefix}_macro_f1']:.4f} "
+                    f"parse_rate={metrics[f'{prefix}_parse_rate']:.4f}"
+                )
+
+            self.accelerator.wait_for_everyone()
+
+        metrics_list = [all_metrics if self.accelerator.is_main_process else None]
+        metrics_list = broadcast_object_list(metrics_list, from_process=0)
+        all_metrics = metrics_list[0]
+
+        return all_metrics
     
     def math_evaluate(self, eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None, ignore_keys: Optional[List[str]] = None, metric_key_prefix: str = "eval") -> Dict[str, float]:
         metric = {}
