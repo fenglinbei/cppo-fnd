@@ -22,7 +22,6 @@ import time
 import math
 
 import torch
-import torch.utils.data
 import transformers
 from accelerate.utils import broadcast_object_list, gather, gather_object, is_peft_model, set_seed, broadcast
 from accelerate.utils.other import is_compiled_module
