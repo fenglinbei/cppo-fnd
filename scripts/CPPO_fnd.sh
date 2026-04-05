@@ -1,7 +1,7 @@
 export SWANLAB_PROJECT="factcheck-grpo"
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
-    --num_processes=3  \
+    --num_processes=1  \
     --main_process_port 10909 \
     src/open_r1/grpo_fnd.py \
     --config recipes/fnd/Qwen3-0.6B.yaml \
