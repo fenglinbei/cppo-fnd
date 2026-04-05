@@ -1,5 +1,4 @@
 export SWANLAB_PROJECT="factcheck-grpo"
-export CUDA_VISIBLE_DEVICES=0,1,2,3
 export NCCL_CUMEM_HOST_ENABLE=0 
 export NCCL_CUMEM_ENABLE=0 
 accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
