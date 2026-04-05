@@ -524,11 +524,10 @@ class GRPOTrainer(Trainer):
                 )
                 with world_size_patch, profiling_patch:
 
-                    tp_size = torch.distributed.get_world_size() 
+                    # tp_size = torch.distributed.get_world_size() 
 
                     self.llm = LLM(
                         model=model.name_or_path,
-                        tensor_parallel_size=tp_size,
                         pipeline_parallel_size=1,
                         device=vllm_device,
                         gpu_memory_utilization=self.args.vllm_gpu_memory_utilization,
