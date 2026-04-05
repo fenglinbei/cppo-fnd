@@ -52,7 +52,7 @@ from trl.data_utils import apply_chat_template, is_conversational, maybe_apply_c
 from trl.extras.profiling import profiling_decorator
 from trl.import_utils import is_vllm_available
 from trl.models import create_reference_model, prepare_deepspeed, unwrap_model_for_generation
-from trl.trainer.callbacks import SyncRefModelCallback
+# from trl.trainer.callbacks import SyncRefModelCallback
 from trl.trainer.grpo_config import GRPOConfig
 from trl.trainer.utils import generate_model_card, get_comet_experiment_url, pad, selective_log_softmax
 from math_verify import LatexExtractionConfig, parse, verify
@@ -579,8 +579,8 @@ class GRPOTrainer(Trainer):
             else:
                 self.ref_model = self.accelerator.prepare_model(self.ref_model, evaluation_mode=True)
 
-        if args.sync_ref_model:
-            self.add_callback(SyncRefModelCallback(ref_model=self.ref_model, accelerator=self.accelerator))
+        # if args.sync_ref_model:
+        #     self.add_callback(SyncRefModelCallback(ref_model=self.ref_model, accelerator=self.accelerator))
 
         for i, reward_func in enumerate(self.reward_funcs):
             if isinstance(reward_func, PreTrainedModel):
