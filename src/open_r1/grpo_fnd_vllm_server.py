@@ -43,7 +43,6 @@ import random
 import numpy as np
 from src.open_r1.grpo_trainer_fnd_vllm_server import GRPOTrainer
 
-print("=============Import DONE===========")
 
 logger = logging.getLogger(__name__)
 import time
@@ -178,6 +177,7 @@ class GRPOScriptArguments(ScriptArguments):
 
 def main(script_args, training_args, model_args):
     # Set seed for reproducibility
+    print("begin set seed")
     set_seed(training_args.seed)
     print(script_args, training_args, model_args)
 
