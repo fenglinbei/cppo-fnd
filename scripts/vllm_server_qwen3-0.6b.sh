@@ -7,7 +7,6 @@ vllm serve ./models/Qwen3-0.6B \
   --port 10909 \
   --dtype bfloat16 \
   --tensor-parallel-size 1 \
-  --gpu-memory-utilization 0.8 \
+  --gpu-memory-utilization 0.9 \
   --enforce-eager \
-  --weight-transfer-config '{"backend":"nccl"}' \
-  --load-format dummy
+  --weight-transfer-config '{"backend":"nccl"}' 
