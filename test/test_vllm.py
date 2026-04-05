@@ -21,7 +21,7 @@ llm = LLM(
     trust_remote_code=True,
     device=vllm_device,
     model_impl="transformers",
-    gpu_memory_utilization=0.9
+    gpu_memory_utilization=0.5
 )
 
 outs = llm.generate(["Hello"], SamplingParams(max_tokens=8))
