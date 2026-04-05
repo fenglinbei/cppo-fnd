@@ -177,7 +177,6 @@ class GRPOScriptArguments(ScriptArguments):
 
 def main(script_args, training_args, model_args):
     # Set seed for reproducibility
-    print("begin set seed")
     set_seed(training_args.seed)
     print(script_args, training_args, model_args)
 
@@ -360,6 +359,7 @@ def main(script_args, training_args, model_args):
 if __name__ == "__main__":
     # Call the function to set random seed for reproducibility
     set_random_seed(42)
+    print("ramdom seed set")
     parser = TrlParser((GRPOScriptArguments, GRPOConfig, ModelConfig))
     script_args, training_args, model_args = parser.parse_args_and_config()
     main(script_args, training_args, model_args)
