@@ -11,5 +11,5 @@ accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
     --model_name_or_path=./models/Qwen3-0.6B \
     --dataset_name=data/liar-raw \
     --num_generations=4 \
-    --log_level=infp \
+    --log_level=info \
     --dataset_train_split=train
