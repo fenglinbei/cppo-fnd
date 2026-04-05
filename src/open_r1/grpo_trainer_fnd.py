@@ -524,6 +524,8 @@ class GRPOTrainer(Trainer):
                 )
                 with world_size_patch, profiling_patch:
 
+                    time.sleep(10)
+
                     self.llm = LLM(
                         model=model.name_or_path,  
                         device=vllm_device,
