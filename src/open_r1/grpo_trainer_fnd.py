@@ -527,7 +527,7 @@ class GRPOTrainer(Trainer):
                     torch.cuda.set_device(vllm_device)
                     self.llm = LLM(
                         model=model.name_or_path,  
-                        device="cuda:1",
+                        device="cuda",
                         gpu_memory_utilization=self.args.vllm_gpu_memory_utilization,
                         dtype=self.args.vllm_dtype,
                         # Automatic Prefix Caching caches the KV cache of existing queries, so that a new query can
