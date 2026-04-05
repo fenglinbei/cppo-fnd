@@ -523,12 +523,11 @@ class GRPOTrainer(Trainer):
                     "vllm.worker.worker.Worker._assert_memory_footprint_increased_during_profiling", return_value=None
                 )
                 with world_size_patch, profiling_patch:
-
-                    time.sleep(10)
-
+                    
+                    torch.cuda.set_device(vllm_device)
                     self.llm = LLM(
                         model=model.name_or_path,  
-                        device=vllm_device,
+                        device="cuda",
                         gpu_memory_utilization=self.args.vllm_gpu_memory_utilization,
                         dtype=self.args.vllm_dtype,
                         # Automatic Prefix Caching caches the KV cache of existing queries, so that a new query can
