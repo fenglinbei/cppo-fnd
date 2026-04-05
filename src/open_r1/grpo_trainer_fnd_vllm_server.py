@@ -633,7 +633,7 @@ class GRPOTrainer(Trainer):
     def _move_model_to_vllm_server(self):
         if not self.accelerator.is_main_process:
             return
-
+        torch.cuda.set_device(self.accelerator.device.index)
         self._ensure_vllm_server_sync_initialized()
 
         with unwrap_model_for_generation(
@@ -745,9 +745,8 @@ class GRPOTrainer(Trainer):
                             "该脚本不支持非服务器的vllm推理端部署"
                         )
                 else:
-                    all_outputs = self.llm.generate(
-                        ordered_set_of_prompts, sampling_params=self.sampling_params, use_tqdm=False
-                    )
+                    self.repeat = 1
+                    completion_ids = [None] * len(all_prompts_text)
                 
                 completion_ids = []
                 for outputs in all_outputs:
@@ -760,6 +759,8 @@ class GRPOTrainer(Trainer):
                     prompt_mask = torch.repeat_interleave(prompt_mask, repeats=self.repeat,dim=0)
                     prompts = [ x for num in prompts for x in [ num ] * self.repeat ] 
                     prompts_text = [ x for num in prompts_text for x in [ num ] * self.repeat ]
+                else:
+                    completion_ids = [None] * len(all_prompts_text)
             else:
                 if self.args.allocation:
                     self.repeat = int(1 / (1-self.args.pruning))
@@ -1454,9 +1455,20 @@ class GRPOTrainer(Trainer):
         if not self.accelerator.is_main_process or self._vllm_sync_initialized:
             return
 
+        dev = self.accelerator.device
+        if dev.type != "cuda" or dev.index is None:
+            raise RuntimeError(f"Unexpected accelerator.device: {dev}")
+
+        torch.cuda.set_device(dev.index)
+        print(
+            f"[vllm-sync-init] rank={self.accelerator.process_index} "
+            f"accelerator.device={dev} current_cuda={torch.cuda.current_device()} "
+            f"CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES')}"
+        )
+
         info = self._vllm_http_get("get_world_size", timeout=10)
         self._vllm_inference_world_size = int(info["world_size"])
-        world_size = self._vllm_inference_world_size + 1  # +1 for trainer
+        world_size = self._vllm_inference_world_size + 1
         rank_offset = 1
 
         init_payload = {
