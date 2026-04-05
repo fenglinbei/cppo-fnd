@@ -1251,7 +1251,7 @@ class GRPOTrainer(Trainer):
                             skip_special_tokens=True
                         )
 
-                    pred_labels = [extract_prediction(x)["label"] for x in completions_text]
+                    pred_labels = [LABEL2ID[extract_prediction(x)["label"]] for x in completions_text]
 
                     local_preds.extend(pred_labels)
                     local_golds.extend(gold_labels)
