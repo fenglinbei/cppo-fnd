@@ -1,6 +1,6 @@
 export SWANLAB_PROJECT="factcheck-grpo"
 accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
-    --num_processes=1  \
+    --num_processes=3  \
     --main_process_port 10909 \
     src/open_r1/grpo_fnd.py \
     --config recipes/fnd/Qwen3-0.6B.yaml \
