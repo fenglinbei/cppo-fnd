@@ -533,6 +533,12 @@ class GRPOTrainer(Trainer):
                         print("device", i, torch.cuda.get_device_name(i))
                         print("mem_get_info(i) =", torch.cuda.mem_get_info(i))
 
+                    torch.cuda.set_device(3)
+                    x = torch.zeros(1, device="cuda:3")
+                    print("tensor device =", x.device)
+                    print("current_device =", torch.cuda.current_device())
+                    print("current mem_get_info =", torch.cuda.mem_get_info())
+
                     # vllm_device = "cuda:2"   # 这里一定要写“进程内本地索引”
                     print(f"Vllm device: {vllm_device}")
                     torch.cuda.set_device(vllm_device)
