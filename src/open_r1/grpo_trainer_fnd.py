@@ -1526,6 +1526,8 @@ class GRPOTrainer(Trainer):
         metrics = None
         if self.control.should_evaluate:
             metrics = self._evaluate(trial, ignore_keys_for_eval)
+            import json
+            print(f"Metric: {json.dumps(metrics, ensure_ascii=False, indent=2)}")
             is_new_best_metric = self._determine_best_metric(metrics=metrics, trial=trial)
 
             if self.args.save_strategy == SaveStrategy.BEST:
