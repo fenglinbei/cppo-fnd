@@ -1,7 +1,7 @@
 export SWANLAB_PROJECT="factcheck-grpo"
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
-    --num_processes=3  \
+    --num_processes=4  \
     --main_process_port 10909 \
     src/open_r1/grpo_fnd.py \
     --config recipes/fnd/Qwen3-0.6B.yaml \
@@ -10,6 +10,6 @@ accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
     --eval_steps=100 --max_completion_length=1024 \
     --model_name_or_path=./models/Qwen3-0.6B \
     --dataset_name=data/liar-raw \
-    --num_generations=6 \
+    --num_generations=8 \
     --log_level=info \
     --dataset_train_split=train
