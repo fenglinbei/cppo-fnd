@@ -41,16 +41,14 @@ This paper introduces Completion Pruning Policy Optimization (CPPO) to accelerat
 
 ### 1. Prepare the environment:
 ```bash
-conda create -p /data/liaozijie/conda/cppo python=3.11
-conda activate /data/liaozijie/conda/cppo
+conda create -p /data/liaozijie/conda/cppo-fnd python=3.11
+conda activate /data/liaozijie/conda/cppo-fnd
+
 pip install vllm==0.7.2
-pip install swanlab
-pip install -U "transformers<5"
-pip install mergekit==0.1.4
-pip install llm_blender==0.0.2
 pip install setuptools
 pip install flash-attn --no-build-isolation
 pip install -e ".[dev]"
+pip install swanlab
 ```
 
 ### 1.5. Download model
