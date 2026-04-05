@@ -43,6 +43,8 @@ import random
 import numpy as np
 from src.open_r1.grpo_trainer_fnd_vllm_server import GRPOTrainer
 
+print("=============Import DONE===========")
+
 logger = logging.getLogger(__name__)
 import time
 
