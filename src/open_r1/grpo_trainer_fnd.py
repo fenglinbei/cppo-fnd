@@ -524,7 +524,6 @@ class GRPOTrainer(Trainer):
                 )
                 with world_size_patch, profiling_patch:
                     
-                    torch.cuda.set_device(vllm_device)
                     self.llm = LLM(
                         model=model.name_or_path,  
                         device="cuda",
