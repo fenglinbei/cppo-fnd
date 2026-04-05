@@ -43,7 +43,8 @@ num_train_epochs: 1
 output_dir: data/Qwen-2.5-1.5B
 overwrite_output_dir: true
 report_to:
-- swanlab
+- wandb
+run_name: factcheck-cppo-qwen3-0.6b
 reward_funcs:
 - fc_label
 - fc_ordinal
