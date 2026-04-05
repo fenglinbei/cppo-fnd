@@ -90,7 +90,7 @@ if is_peft_available():
 
 if is_vllm_available():
     from vllm import LLM, SamplingParams
-    from vllm.sampling_params import GuidedDecodingParams
+    # from vllm.sampling_params import GuidedDecodingParams
 
 # if is_wandb_available():
 #     import wandb
@@ -538,10 +538,11 @@ class GRPOTrainer(Trainer):
                     )
 
                 # Guided decoding, if enabled
-                if args.vllm_guided_decoding_regex is not None:
-                    guided_decoding = GuidedDecodingParams(backend="outlines", regex=args.vllm_guided_decoding_regex)
-                else:
-                    guided_decoding = None
+                guided_decoding = None
+                # if args.vllm_guided_decoding_regex is not None:
+                #     guided_decoding = GuidedDecodingParams(backend="outlines", regex=args.vllm_guided_decoding_regex)
+                # else:
+                #     guided_decoding = None
 
                 # Sampling parameters
                 self.sampling_params = SamplingParams(
@@ -766,10 +767,12 @@ class GRPOTrainer(Trainer):
                 # edit
                 if self.args.allocation:
                     self.repeat = int(1 / (1-self.args.pruning))
-                    if self.args.vllm_guided_decoding_regex is not None:
-                        guided_decoding = GuidedDecodingParams(backend="outlines", regex=self.args.vllm_guided_decoding_regex)
-                    else:
-                        guided_decoding = None
+                    
+                    guided_decoding = None
+                    # if self.args.vllm_guided_decoding_regex is not None:
+                    #     guided_decoding = GuidedDecodingParams(backend="outlines", regex=self.args.vllm_guided_decoding_regex)
+                    # else:
+                    #     guided_decoding = None
                         
                     train_sampling_params = SamplingParams(
                         temperature=self.args.temperature,
@@ -1175,14 +1178,15 @@ class GRPOTrainer(Trainer):
                     all_prompts_text = gather_object(prompts_text)
 
                     if self.accelerator.is_main_process:
-                        guided_decoding = (
-                            GuidedDecodingParams(
-                                backend="outlines",
-                                regex=self.args.vllm_guided_decoding_regex,
-                            )
-                            if self.args.vllm_guided_decoding_regex is not None
-                            else None
-                        )
+                        # guided_decoding = (
+                        #     GuidedDecodingParams(
+                        #         backend="outlines",
+                        #         regex=self.args.vllm_guided_decoding_regex,
+                        #     )
+                        #     if self.args.vllm_guided_decoding_regex is not None
+                        #     else None
+                        # )
+                        guided_decoding = None
 
                         inference_sampling_params = SamplingParams(
                             temperature=0.0,
