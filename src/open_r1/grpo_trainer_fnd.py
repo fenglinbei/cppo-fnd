@@ -996,23 +996,17 @@ class GRPOTrainer(Trainer):
         if (
             self.log_completions
             and self.state.global_step % self.args.logging_steps == 0
-            and "swanlab" in self.args.report_to
+            and "wandb" in self.args.report_to
             and self.accelerator.is_main_process
         ):
-            import swanlab
-
             gathered_prompts = gather_object(prompts_text)
             gathered_completions = gather_object(completions_text)
 
-            examples = []
+            table = wandb.Table(columns=["sample_id", "prompt", "completion"])
             for i, (p, c) in enumerate(zip(gathered_prompts[:8], gathered_completions[:8])):
-                examples.append(
-                    swanlab.Text(
-                        f"[sample {i}]\n\n[prompt]\n{p}\n\n[completion]\n{c}"
-                    )
-                )
+                table.add_data(i, p, c)
 
-            swanlab.log({"train/completions": examples}, step=self.state.global_step)
+            wandb.log({"train/completions": table}, step=self.state.global_step)
 
         return {
             "prompt_ids": prompt_ids,
