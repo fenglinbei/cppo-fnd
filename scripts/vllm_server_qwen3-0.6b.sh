@@ -1,5 +1,7 @@
 export VLLM_SERVER_DEV_MODE=1
 export CUDA_VISIBLE_DEVICES=3
+export NCCL_CUMEM_HOST_ENABLE=0 
+export NCCL_CUMEM_ENABLE=0 
 
 vllm serve ./models/Qwen3-0.6B \
   --served-model-name live-policy \
