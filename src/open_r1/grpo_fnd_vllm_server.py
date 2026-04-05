@@ -177,6 +177,7 @@ class GRPOScriptArguments(ScriptArguments):
 def main(script_args, training_args, model_args):
     # Set seed for reproducibility
     set_seed(training_args.seed)
+    print(script_args, training_args, model_args)
 
     ###############
     # Setup logging

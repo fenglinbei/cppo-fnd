@@ -63,7 +63,6 @@ from itertools import product
 
 from src.open_r1.rewards_fnd import extract_prediction
 
-print("Import success")
 
 ID2LABEL = {
         0: "PANTS_FIRE",
