@@ -527,6 +527,7 @@ class GRPOTrainer(Trainer):
                     self.llm = LLM(
                         model=model.name_or_path,  
                         device="cuda",
+                        tensor_parallel_size=4,
                         gpu_memory_utilization=self.args.vllm_gpu_memory_utilization,
                         dtype=self.args.vllm_dtype,
                         # Automatic Prefix Caching caches the KV cache of existing queries, so that a new query can
@@ -1280,120 +1281,6 @@ class GRPOTrainer(Trainer):
         all_metrics = metrics_list[0]
 
         return all_metrics
-    
-    def math_evaluate(self, eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None, ignore_keys: Optional[List[str]] = None, metric_key_prefix: str = "eval") -> Dict[str, float]:
-        metric = {}
-        metric['eval_accuracy'] = 0
-        for dataset in self.eval_dataset.keys():
-            eval_dataloader = self.get_eval_dataloader(self.eval_dataset[dataset])
-            pbar = tqdm(eval_dataloader) if self.accelerator.is_main_process else eval_dataloader
-            total = 0
-            correct = 0
-            device = self.accelerator.device
-            accuracy = torch.tensor(0, device=device)
-            for inputs in pbar:
-                if dataset == 'gsm8k':
-                    solution = [x['solution'] for x in inputs]
-                    solution = [extract_answer_from_dataset(a) for a in solution]
-                elif dataset == 'amc23':
-                    solution = [x['solution'] for x in inputs]
-                else:
-                    solution =[ parse(x['solution'], extraction_mode="first_match", extraction_config=[LatexExtractionConfig()]) for x in inputs]
-                prompts_text = [maybe_apply_chat_template(example, self.processing_class)["prompt"] for example in inputs]
-                prompt_inputs = self.processing_class(
-                    prompts_text, return_tensors="pt", padding=True, padding_side="left", add_special_tokens=False
-                )
-                prompt_inputs = super()._prepare_inputs(prompt_inputs)
-                prompt_ids, prompt_mask = prompt_inputs["input_ids"], prompt_inputs["attention_mask"]
-
-                if self.max_prompt_length is not None:
-                    prompt_ids = prompt_ids[:, -self.max_prompt_length :]
-                    prompt_mask = prompt_mask[:, -self.max_prompt_length :]
-
-                # Generate completions using either vLLM or regular generation
-                if self.args.use_vllm:
-                    # First, have main process load weights if needed
-                    if self.state.global_step != self._last_loaded_step:
-                        self._move_model_to_vllm()
-                        self._last_loaded_step = self.state.global_step
-
-                    # Generate completions using vLLM: gather all prompts and use them in a single call in the main process
-                    all_prompts_text = gather_object(prompts_text)
-                    all_solution = gather_object(solution)
-                    
-                    if self.accelerator.is_main_process:
-                        # Since 'prompts' contains 'num_generations' duplicates, we first take unique prompts, and generate
-                        # num_generations outputs for each one. This is faster than generating outputs for each duplicate
-                        # prompt individually.
-                        ordered_set_of_prompts = list(dict.fromkeys(all_prompts_text))
-                        
-                        all_solution = all_solution[:len(ordered_set_of_prompts)]
-
-                        # Guided decoding, if enabled
-                        if self.args.vllm_guided_decoding_regex is not None:
-                            guided_decoding = GuidedDecodingParams(backend="outlines", regex=self.args.vllm_guided_decoding_regex)
-                        else:
-                            guided_decoding = None
-                        
-                        if dataset in ['math500','gsm8k']:
-                            n = 1
-                            inference_sampling_params = SamplingParams(
-                                temperature=0,
-                                max_tokens=self.max_completion_length,
-                                guided_decoding=guided_decoding,
-                                n=n,
-                            )
-                        else:
-                            n = 4
-                            inference_sampling_params = SamplingParams(
-                                temperature=0.6,
-                                max_tokens=3072,
-                                top_p=0.95,
-                                guided_decoding=guided_decoding,
-                                n=n,
-                            )
-                            # edit 
-                             
-                            all_solution = [ x for num in all_solution for x in [ num ] * n ]  
-                            
-                        completion_ids = []
-                        all_outputs = self.llm.generate(
-                            ordered_set_of_prompts, sampling_params=inference_sampling_params, use_tqdm=False,
-                        )
-                        for outputs in all_outputs:
-                            for output in outputs.outputs:
-                                completion_ids.append(output.token_ids)
-                            
-                        completion_ids = [torch.tensor(ids, device=device) for ids in completion_ids]
-                        completions_text = self.processing_class.batch_decode(completion_ids, skip_special_tokens=True)
-                        predicted = [x for x in completions_text]
-                        total += len(predicted)
-                        
-                        answer_parseds = [parse(x, extraction_config=[LatexExtractionConfig(normalization_config=NormalizationConfig(nits=False,malformed_operators=False,basic_latex=True,equations=True,boxed="all",units=True,),boxed_match_priority=0,try_extract_without_anchor=False,)],extraction_mode="first_match",) for x in predicted]
-                        try:
-                            for solution, answer_parsed in zip(all_solution, answer_parseds):
-                                if float(verify(solution, answer_parsed)):
-                                    correct += 1
-                        except Exception as e:
-                            print("\nFailed to parse model output for prompt:")
-                            print("Error:", e)
-                            print("-"*50)
-            
-                    self.accelerator.wait_for_everyone()
-
-            if self.accelerator.is_main_process:
-                accuracy = torch.tensor((correct / total) * 100, device=device)
-                print(f"\n{dataset} Accuracy: {accuracy:.2f}% ({correct}/{total})")
-                print("=" * 50)
-                mode = "eval" if self.control.should_evaluate else "train"
-                self._metrics[mode][f"{dataset}_accuracy"].append(accuracy.item())
-            
-            
-            accuracy = broadcast(accuracy)
-            if dataset == 'math500':
-                metric['eval_accuracy'] += accuracy.item()
-
-        return metric
     
     def training_step(
         self, model: nn.Module, inputs: Dict[str, Union[torch.Tensor, Any]], num_items_in_batch=None
