@@ -6,7 +6,7 @@ print("CUDA_VISIBLE_DEVICES =", os.environ.get("CUDA_VISIBLE_DEVICES"))
 print("torch.cuda.is_available() =", torch.cuda.is_available())
 print("torch.cuda.device_count() =", torch.cuda.device_count())
 
-assert torch.cuda.device_count() == 1
+assert torch.cuda.device_count() == 2
 print("device 0 =", torch.cuda.get_device_name(0))
 print("mem_get_info(0) =", torch.cuda.mem_get_info(0))
 
