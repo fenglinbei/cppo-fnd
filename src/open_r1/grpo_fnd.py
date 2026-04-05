@@ -220,8 +220,6 @@ def main(script_args, training_args, model_args):
 
     # Load the dataset
     dataset = load_from_disk(script_args.dataset_name)
-    
-    eval_datasets = {"base": dataset["validation"]}
 
     ################
     # Load tokenizer
@@ -292,8 +290,6 @@ def main(script_args, training_args, model_args):
     #############################
     # Initialize the GRPO trainer
     #############################
-    print(train_dataset[script_args.dataset_train_split][0])
-
     trainer = GRPOTrainer(
         model=model_args.model_name_or_path,
         reward_funcs=reward_funcs,
