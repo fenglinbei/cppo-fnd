@@ -525,19 +525,19 @@ class GRPOTrainer(Trainer):
                 with world_size_patch, profiling_patch:
 
                     # tp_size = torch.distributed.get_world_size() 
-                    # print("CUDA_VISIBLE_DEVICES =", os.environ.get("CUDA_VISIBLE_DEVICES"))
-                    # print("torch.cuda.is_available() =", torch.cuda.is_available())
-                    # print("torch.cuda.device_count() =", torch.cuda.device_count())
+                    print("CUDA_VISIBLE_DEVICES =", os.environ.get("CUDA_VISIBLE_DEVICES"))
+                    print("torch.cuda.is_available() =", torch.cuda.is_available())
+                    print("torch.cuda.device_count() =", torch.cuda.device_count())
 
-                    # for i in range(torch.cuda.device_count()):
-                    #     print("device", i, torch.cuda.get_device_name(i))
-                    #     print("mem_get_info(i) =", torch.cuda.mem_get_info(i))
+                    for i in range(torch.cuda.device_count()):
+                        print("device", i, torch.cuda.get_device_name(i))
+                        print("mem_get_info(i) =", torch.cuda.mem_get_info(i))
 
-                    # # vllm_device = "cuda:2"   # 这里一定要写“进程内本地索引”
-                    # print(f"Vllm device: {vllm_device}")
-                    # torch.cuda.set_device(vllm_device)
-                    # print("current_device =", torch.cuda.current_device())
-                    # print("current mem_get_info =", torch.cuda.mem_get_info())
+                    # vllm_device = "cuda:2"   # 这里一定要写“进程内本地索引”
+                    print(f"Vllm device: {vllm_device}")
+                    torch.cuda.set_device(vllm_device)
+                    print("current_device =", torch.cuda.current_device())
+                    print("current mem_get_info =", torch.cuda.mem_get_info())
 
                     self.llm = LLM(
                         model=model.name_or_path,
