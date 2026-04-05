@@ -7,7 +7,7 @@ accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
     --config recipes/fnd/Qwen3-0.6B.yaml \
     --output_dir=output/fnd/ \
     --save_strategy='best' \
-    --eval_steps=10 --max_completion_length=1024 \
+    --eval_steps=100 --max_completion_length=1024 \
     --model_name_or_path=./models/Qwen3-0.6B \
     --dataset_name=data/liar-raw \
     --num_generations=8 \
