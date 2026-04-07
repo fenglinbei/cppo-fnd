@@ -16,16 +16,20 @@ print("tensor device =", x.device)
 print("current_device =", torch.cuda.current_device())
 print("current mem_get_info =", torch.cuda.mem_get_info())
 
-llm = LLM(
-    model="./models/Qwen3-0.6B",
-    tensor_parallel_size=1,
-    trust_remote_code=True,
-    device="cuda:0",
-    model_impl="transformers",
-    gpu_memory_utilization=0.5,
-    distributed_executor_backend="uni",
-    enforce_eager=True,
-)
-
-outs = llm.generate(["Hello"], SamplingParams(max_tokens=8))
-print(outs[0].outputs[0].text)
+try:
+    llm = LLM(
+        model="./models/Qwen3-0.6B",
+        tensor_parallel_size=1,
+        trust_remote_code=True,
+        device="cuda:0",
+        model_impl="transformers",
+        gpu_memory_utilization=0.5,
+        distributed_executor_backend="uni",
+        enforce_eager=True,
+    )
+    
+    outs = llm.generate(["Hello"], SamplingParams(max_tokens=8))
+    print(outs[0].outputs[0].text)
+    print("指定GPU成功")
+except:
+    print("指定GPU失败")
