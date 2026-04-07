@@ -9,7 +9,6 @@ llm = LLM(
         device="cuda:3",
         dtype="auto",
         gpu_memory_utilization=0.6,
-        enable_prefix_caching=False,
         max_model_len=None
     )
 
