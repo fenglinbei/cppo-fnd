@@ -7,10 +7,10 @@ llm = LLM(
         tensor_parallel_size=1,
         trust_remote_code=True,
         device="cuda",
-        dtype=self.args.vllm_dtype,
+        dtype="auto",
         gpu_memory_utilization=0.6,
         enable_prefix_caching=False,
-        max_model_len=self.args.vllm_max_model_len
+        max_model_len=None
     )
 
 outs = llm.generate(["Hello"], SamplingParams(max_tokens=8))
