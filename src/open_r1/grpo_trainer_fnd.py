@@ -530,7 +530,7 @@ class GRPOTrainer(Trainer):
                     print(f"vllm_max_model_len: {self.args.vllm_max_model_len}")
                     self.llm = LLM(
                         model=model.name_or_path,  
-                        device=vllm_device,
+                        device="cuda:0",
                         tensor_parallel_size=1,
                         gpu_memory_utilization=self.args.vllm_gpu_memory_utilization,
                         dtype=self.args.vllm_dtype,
