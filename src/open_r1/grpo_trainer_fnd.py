@@ -531,7 +531,7 @@ class GRPOTrainer(Trainer):
                     self.llm = LLM(
                         model=model.name_or_path,  
                         device="cuda:0",
-                        tensor_parallel_size=1,
+                        tensor_parallel_size=4,
                         gpu_memory_utilization=self.args.vllm_gpu_memory_utilization,
                         dtype=self.args.vllm_dtype,
                         # Automatic Prefix Caching caches the KV cache of existing queries, so that a new query can
