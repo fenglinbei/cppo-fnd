@@ -1,7 +1,8 @@
 export WANDB_PROJECT="factcheck-grpo"
 export WANDB_API_KEY="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"
-export CUDA_VISIBLE_DEVICES=0,1,2
+export CUDA_VISIBLE_DEVICES=0,1,2,3
 export CUDA_LAUNCH_BLOCKING=1
+export CUDA_DEVICE_ORDER="PCI_BUS_ID"
 accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
     --num_processes=3  \
     --main_process_port 10909 \
