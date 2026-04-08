@@ -567,23 +567,23 @@ class GRPOTrainer(Trainer):
             # When using vLLM, the main process is responsible for loading the model weights. This can cause process
             # desynchronization and seems to lead to DeepSpeed hanging during initialization. To prevent this, we
             # synchronize all processes after vLLM has been fully initialized.
-            self.accelerator.wait_for_everyone()
-#             if dist.is_available() and dist.is_initialized():
-#                 print(
-#                     f"[before host barrier] rank={self.accelerator.process_index}, "
-#                     f"local_rank={self.accelerator.local_process_index}, "
-#                     f"device={self.accelerator.device}, "
-#                     f"current_device={torch.cuda.current_device()}",
-#                     flush=True,
-# )
-#                 dist.monitored_barrier(
-#                     group=self._gloo_group,
-#                     timeout=timedelta(seconds=120),
-#                     wait_all_ranks=True,
-#                 )
-#                 print(f"[after host barrier] rank={self.accelerator.process_index}", flush=True)
-#             else:
-#                 self.accelerator.wait_for_everyone()
+            # self.accelerator.wait_for_everyone()
+            if dist.is_available() and dist.is_initialized():
+                print(
+                    f"[before host barrier] rank={self.accelerator.process_index}, "
+                    f"local_rank={self.accelerator.local_process_index}, "
+                    f"device={self.accelerator.device}, "
+                    f"current_device={torch.cuda.current_device()}",
+                    flush=True,
+)
+                dist.monitored_barrier(
+                    group=self._gloo_group,
+                    timeout=timedelta(seconds=120),
+                    wait_all_ranks=True,
+                )
+                print(f"[after host barrier] rank={self.accelerator.process_index}", flush=True)
+            else:
+                self.accelerator.wait_for_everyone()
         else:
             self.generation_config = GenerationConfig(
                 max_new_tokens=self.max_completion_length,
