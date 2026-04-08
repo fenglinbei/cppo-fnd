@@ -530,7 +530,7 @@ class GRPOTrainer(Trainer):
                     print(f"vllm_max_model_len: {self.args.vllm_max_model_len}")
                     self.llm = LLM(
                         model=model.name_or_path,  
-                        device="cuda",
+                        device=vllm_device,
                         gpu_memory_utilization=self.args.vllm_gpu_memory_utilization,
                         dtype=self.args.vllm_dtype,
                         # Automatic Prefix Caching caches the KV cache of existing queries, so that a new query can
