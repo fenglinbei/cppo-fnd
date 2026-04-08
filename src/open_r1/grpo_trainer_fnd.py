@@ -60,6 +60,7 @@ from tqdm import tqdm
 from latex2sympy2_extended import NormalizationConfig
 from src.open_r1.rewards_gsm import extract_answer_from_dataset, extract_answer_from_model_output, extract_last_number, extract_single_number
 from itertools import product
+import torch.distributed as dist
 
 from src.open_r1.rewards_fnd import extract_prediction
 
@@ -553,13 +554,32 @@ class GRPOTrainer(Trainer):
                     guided_decoding=guided_decoding,
                     n=args.num_generations,
                 )
+            
+            if torch.cuda.is_available():
+                torch.cuda.set_device(self.accelerator.local_process_index)
 
             self._last_loaded_step = 0  # tag to avoid useless loading during grad accumulation
 
             # When using vLLM, the main process is responsible for loading the model weights. This can cause process
             # desynchronization and seems to lead to DeepSpeed hanging during initialization. To prevent this, we
             # synchronize all processes after vLLM has been fully initialized.
-            self.accelerator.wait_for_everyone()
+            
+            if dist.is_available() and dist.is_initialized():
+                print(
+                    f"[before barrier] rank={self.accelerator.process_index}, "
+                    f"local_rank={self.accelerator.local_process_index}, "
+                    f"device={self.accelerator.device}, "
+                    f"current_device={torch.cuda.current_device()}, "
+                    f"visible={os.environ.get('CUDA_VISIBLE_DEVICES')}",
+                    flush=True,
+                )
+                dist.barrier(device_ids=[torch.cuda.current_device()])
+                print(
+                    f"[after barrier] rank={self.accelerator.process_index}",
+                    flush=True,
+                )
+            else:
+                self.accelerator.wait_for_everyone()
         else:
             self.generation_config = GenerationConfig(
                 max_new_tokens=self.max_completion_length,
