@@ -470,6 +470,9 @@ class GRPOTrainer(Trainer):
             optimizers=optimizers,
         )
 
+        if not hasattr(self, "_gloo_group"):
+            self._gloo_group = dist.new_group(backend="gloo")
+
         # Check if the per_device_train/eval_batch_size * num processes can be divided by the number of generations
         num_processes = self.accelerator.num_processes
         global_batch_size = args.per_device_train_batch_size * num_processes
@@ -566,18 +569,18 @@ class GRPOTrainer(Trainer):
             
             if dist.is_available() and dist.is_initialized():
                 print(
-                    f"[before barrier] rank={self.accelerator.process_index}, "
+                    f"[before host barrier] rank={self.accelerator.process_index}, "
                     f"local_rank={self.accelerator.local_process_index}, "
                     f"device={self.accelerator.device}, "
-                    f"current_device={torch.cuda.current_device()}, "
-                    f"visible={os.environ.get('CUDA_VISIBLE_DEVICES')}",
+                    f"current_device={torch.cuda.current_device()}",
                     flush=True,
+)
+                dist.monitored_barrier(
+                    group=self._gloo_group,
+                    timeout=timedelta(seconds=120),
+                    wait_all_ranks=True,
                 )
-                dist.barrier(device_ids=[torch.cuda.current_device()])
-                print(
-                    f"[after barrier] rank={self.accelerator.process_index}",
-                    flush=True,
-                )
+                print(f"[after host barrier] rank={self.accelerator.process_index}", flush=True)
             else:
                 self.accelerator.wait_for_everyone()
         else:
