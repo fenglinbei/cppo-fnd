@@ -20,5 +20,4 @@ accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
     --dataset_name=data/liar-raw \
     --num_generations=12 \
     --log_level=info \
-    --dataset_train_split=train \
-    --deepspeed none
+    --dataset_train_split=train
