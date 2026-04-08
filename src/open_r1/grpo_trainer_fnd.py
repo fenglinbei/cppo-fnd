@@ -499,15 +499,15 @@ class GRPOTrainer(Trainer):
                         vllm_device = "cuda:0"  # particular case when training with onyl 1 GPU: share it
                     else:
                         vllm_device = f"cuda:{self.accelerator.num_processes}"  # take the next GPU idx
-                # Check that the requested device is available
-                # if vllm_device.split(":")[0] == "cuda" and int(vllm_device.split(":")[1]) >= torch.cuda.device_count():
-                #     raise ValueError(
-                #         f"The requested device for vllm ({vllm_device}) is not available. You are likely using vLLM "
-                #         "without restricting the number of GPUs for training. Set the `--num_processes` argument to a "
-                #         "value lower than the number of GPUs available on your machine—typically, reducing it by one "
-                #         f"is sufficient. In your case: `--num_processes {torch.cuda.device_count() - 1}`."
-                #     )
-                # Check that the requested device is not also used for training
+                Check that the requested device is available
+                if vllm_device.split(":")[0] == "cuda" and int(vllm_device.split(":")[1]) >= torch.cuda.device_count():
+                    raise ValueError(
+                        f"The requested device for vllm ({vllm_device}) is not available. You are likely using vLLM "
+                        "without restricting the number of GPUs for training. Set the `--num_processes` argument to a "
+                        "value lower than the number of GPUs available on your machine—typically, reducing it by one "
+                        f"is sufficient. In your case: `--num_processes {torch.cuda.device_count() - 1}`."
+                    )
+                Check that the requested device is not also used for training
                 if vllm_device in {f"cuda:{idx}" for idx in range(self.accelerator.num_processes)}:
                     warnings.warn(
                         f"The requested device {vllm_device} is also being used for training. For higher throughput "
@@ -530,8 +530,7 @@ class GRPOTrainer(Trainer):
                     print(f"vllm_max_model_len: {self.args.vllm_max_model_len}")
                     self.llm = LLM(
                         model=model.name_or_path,  
-                        device="cuda:0",
-                        tensor_parallel_size=4,
+                        device=vllm_device,
                         gpu_memory_utilization=self.args.vllm_gpu_memory_utilization,
                         dtype=self.args.vllm_dtype,
                         # Automatic Prefix Caching caches the KV cache of existing queries, so that a new query can
