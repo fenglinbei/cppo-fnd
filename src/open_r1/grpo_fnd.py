@@ -37,11 +37,11 @@ from src.open_r1.rewards_fnd import (
 )
 from src.open_r1.utils import get_tokenizer
 from src.open_r1.utils.callbacks import get_callbacks
+from src.open_r1.grpo_trainer_fnd import GRPOTrainer
 # from src.open_r1.utils.wandb_logging import init_wandb_training
 from trl import  ModelConfig, ScriptArguments, TrlParser, get_peft_config
 import random 
 import numpy as np
-from src.open_r1.grpo_trainer_fnd import GRPOTrainer
 
 logger = logging.getLogger(__name__)
 import time
