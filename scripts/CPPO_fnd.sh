@@ -12,7 +12,7 @@ export NCCL_IB_DISABLE=1
 unset NCCL_SHM_DISABLE
 export NCCL_P2P_DISABLE=1
 export VLLM_USE_V1=0
-accelerate launch  --config_file recipes/accelerate_configs/zero3.yaml \
+accelerate launch  --config_file recipes/accelerate_configs/ddp.yaml \
     --num_processes=3  \
     --main_process_port 10909 \
     src/open_r1/grpo_fnd.py \
