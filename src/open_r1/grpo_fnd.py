@@ -24,6 +24,7 @@ from datasets import load_dataset, load_from_disk
 from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
 
+os.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.open_r1.configs import GRPOConfig
 from src.open_r1.rewards_fnd import (
     factcheck_format_reward,
