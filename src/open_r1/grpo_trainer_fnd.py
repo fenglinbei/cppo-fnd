@@ -601,17 +601,17 @@ class GRPOTrainer(Trainer):
         self.model.add_model_tags(self._tag_names)
 
         if self.ref_model is not None:
-            if self.ref_model is not None:
-                self.ref_model.eval()
-                self.ref_model.config.use_cache = False  # 与主模型训练态保持一致，避免额外缓存行为
-                for p in self.ref_model.parameters():
-                    p.requires_grad_(False)
-                self.ref_model.to(self.accelerator.device)
+            # if self.ref_model is not None:
+            #     self.ref_model.eval()
+            #     self.ref_model.config.use_cache = False  # 与主模型训练态保持一致，避免额外缓存行为
+            #     for p in self.ref_model.parameters():
+            #         p.requires_grad_(False)
+            #     self.ref_model.to(self.accelerator.device)
 
-            # if self.is_deepspeed_enabled:
-            #     self.ref_model = prepare_deepspeed(self.ref_model, self.accelerator)
-            # else:
-            #     self.ref_model = self.accelerator.prepare_model(self.ref_model, evaluation_mode=True)
+            if self.is_deepspeed_enabled:
+                self.ref_model = prepare_deepspeed(self.ref_model, self.accelerator)
+            else:
+                self.ref_model = self.accelerator.prepare_model(self.ref_model, evaluation_mode=True)
 
         if args.sync_ref_model:
             self.add_callback(SyncRefModelCallback(ref_model=self.ref_model, accelerator=self.accelerator))

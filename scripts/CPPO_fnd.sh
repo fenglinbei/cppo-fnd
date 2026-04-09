@@ -11,7 +11,7 @@ export NCCL_ASYNC_ERROR_HANDLING=1
 unset NCCL_IB_DISABLE
 unset NCCL_SHM_DISABLE
 export NCCL_P2P_DISABLE=1
-accelerate launch  --config_file recipes/accelerate_configs/zero2.yaml \
+accelerate launch  --config_file recipes/accelerate_configs/ddp.yaml \
     --num_processes=3  \
     --main_process_port 10909 \
     src/open_r1/grpo_fnd.py \
