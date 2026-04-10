@@ -173,11 +173,11 @@ class GRPOScriptArguments(ScriptArguments):
         },
     )
 
-VLLM_GUIDED_DECODING_REGEX = (
-    r"<explanation>[^<]{1,512}</explanation>[ \t\r\n]*"
-    r"<evidence_used>(none|[1-5](,[ \t]*[1-5]){0,4})</evidence_used>[ \t\r\n]*"
-    r"<answer>(PANTS_FIRE|FALSE|BARELY_TRUE|HALF_TRUE|MOSTLY_TRUE|TRUE)</answer>"
-)
+# VLLM_GUIDED_DECODING_REGEX = (
+#     r"<explanation>[^<]{1,512}</explanation>[ \t\r\n]*"
+#     r"<evidence_used>(none|[1-5](,[ \t]*[1-5]){0,4})</evidence_used>[ \t\r\n]*"
+#     r"<answer>(PANTS_FIRE|FALSE|BARELY_TRUE|HALF_TRUE|MOSTLY_TRUE|TRUE)</answer>"
+# )
 
 def main(script_args, training_args, model_args):
     # Set seed for reproducibility
@@ -316,7 +316,7 @@ def main(script_args, training_args, model_args):
 
     training_args.factcheck_train_class_counts = [812, 1985, 1611, 2087, 1950, 1647]
     training_args.factcheck_class_balance_alpha = 0.35
-    training_args.vllm_guided_decoding_regex = VLLM_GUIDED_DECODING_REGEX
+    # training_args.vllm_guided_decoding_regex = VLLM_GUIDED_DECODING_REGEX
 
     #############################
     # Initialize the GRPO trainer
