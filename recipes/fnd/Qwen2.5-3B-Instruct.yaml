@@ -1,0 +1,63 @@
+# Model arguments
+model_name_or_path: ./models/Qwen2.5-3B-Instruct
+model_revision: main
+torch_dtype: bfloat16
+attn_implementation: flash_attention_2
+
+# Data training arguments
+dataset_path: data/liar-raw
+system_prompt: "You are a fact-checking assistant.\n\nGiven a claim and its evidence, do the following:\n1. Write a concise justification based only on the provided evidence.\n2. Predict exactly one label from:\nPANTS_FIRE, FALSE, BARELY_TRUE, HALF_TRUE, MOSTLY_TRUE, TRUE\n\nReturn exactly in this format:\n\n<explanation>\nbrief justification\n</explanation>\n<answer>\nONE_LABEL\n</answer>\n\nDo not output any extra text.\n"
+
+# GRPO trainer config
+bf16: true
+use_vllm: true
+vllm_device: auto
+vllm_gpu_memory_utilization: 0.95
+do_eval: true
+eval_strategy: steps
+eval_steps: 500
+per_device_train_batch_size: 4
+per_device_eval_batch_size: 4
+gradient_accumulation_steps: 2
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+learning_rate: 1.0e-06
+log_completions: false 
+log_level: info
+logging_first_step: true
+logging_steps: 10
+logging_strategy: steps
+lr_scheduler_type: cosine
+max_prompt_length: 1024
+max_completion_length: 512
+max_steps: -1
+num_generations: 12
+num_train_epochs: 3
+output_dir: data/Qwen-2.5-3B
+overwrite_output_dir: true
+report_to:
+- wandb
+run_name: factcheck-grpo-qwen2.5-3b
+reward_funcs:
+- fc_label
+- fc_ordinal
+- fc_format
+- fc_tag_count
+- fc_grounding
+- repetition_penalty
+reward_weights:
+- 1.0
+- 0.2
+- 0.5
+- 0.3
+- 0.5
+- 0.5
+save_strategy: "no"
+metric_for_best_model: "eval_macro_f1"
+save_total_limit: 1
+seed: 42
+warmup_ratio: 0.1
+temperature: 1.0
+num_iterations: 2
+beta: 0.04
