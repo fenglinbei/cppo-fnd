@@ -569,19 +569,19 @@ class GRPOTrainer(Trainer):
             # synchronize all processes after vLLM has been fully initialized.
             # self.accelerator.wait_for_everyone()
             if dist.is_available() and dist.is_initialized():
-                print(
-                    f"[before host barrier] rank={self.accelerator.process_index}, "
-                    f"local_rank={self.accelerator.local_process_index}, "
-                    f"device={self.accelerator.device}, "
-                    f"current_device={torch.cuda.current_device()}",
-                    flush=True,
-)
+                # print(
+                #     f"[before host barrier] rank={self.accelerator.process_index}, "
+                #     f"local_rank={self.accelerator.local_process_index}, "
+                #     f"device={self.accelerator.device}, "
+                #     f"current_device={torch.cuda.current_device()}",
+                #     flush=True,
+                # )
                 dist.monitored_barrier(
                     group=self._gloo_group,
                     timeout=timedelta(seconds=120),
                     wait_all_ranks=True,
                 )
-                print(f"[after host barrier] rank={self.accelerator.process_index}", flush=True)
+                # print(f"[after host barrier] rank={self.accelerator.process_index}", flush=True)
             else:
                 self.accelerator.wait_for_everyone()
         else:

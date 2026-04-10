@@ -12,7 +12,7 @@ system_prompt: "You are a fact-checking assistant.\n\nGiven a claim and its evid
 bf16: true
 use_vllm: true
 vllm_device: auto
-vllm_gpu_memory_utilization: 0.6
+vllm_gpu_memory_utilization: 0.95
 do_eval: true
 eval_strategy: steps
 eval_steps: 500
@@ -26,14 +26,14 @@ learning_rate: 1.0e-06
 log_completions: false 
 log_level: info
 logging_first_step: true
-logging_steps: 2
+logging_steps: 10
 logging_strategy: steps
 lr_scheduler_type: cosine
 max_prompt_length: 1024
 max_completion_length: 512
 max_steps: -1
 num_generations: 12
-num_train_epochs: 1
+num_train_epochs: 3
 output_dir: data/Qwen-2.5-1.5B
 overwrite_output_dir: true
 report_to:
