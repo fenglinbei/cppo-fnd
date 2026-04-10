@@ -24,7 +24,7 @@ accelerate launch  --config_file recipes/accelerate_configs/ddp.yaml \
     --config recipes/fnd/Qwen2.5-3B-Instruct.yaml \
     --output_dir=output/fnd/Qwen-2.5-3B/ \
     --save_strategy='best' \
-    --eval_steps=100 --max_completion_length=1024 \
+    --eval_steps=500 --max_completion_length=1024 \
     --model_name_or_path=./models/Qwen2.5-3B-Instruct \
     --dataset_name=data/liar-raw \
     --num_generations=12 \

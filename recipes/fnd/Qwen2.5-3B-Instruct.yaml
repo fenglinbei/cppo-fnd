@@ -33,7 +33,7 @@ max_prompt_length: 1024
 max_completion_length: 512
 max_steps: -1
 num_generations: 12
-num_train_epochs: 3
+num_train_epochs: 1
 output_dir: data/Qwen-2.5-3B
 overwrite_output_dir: true
 report_to:
