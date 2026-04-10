@@ -219,23 +219,6 @@ def _flatten_evidence_item(item: Any) -> list[str]:
     text = _to_text(item).strip()
     return [text] if text else []
 
-
-def extract_prediction(content: str):
-    explanation = _extract_last_tag(content, "explanation")
-    evidence_raw = _extract_last_tag(content, "evidence_used") or _extract_last_tag(content, "evidence")
-    answer = _extract_last_tag(content, "answer")
-    pred_label = _normalize_label(answer if answer else content)
-    evidence_ids = _parse_evidence_ids(evidence_raw)
-    return {
-        "explanation": explanation,
-        "evidence_used_raw": evidence_raw,
-        "evidence_ids": evidence_ids,
-        "answer": answer,
-        "label": pred_label,
-    }
-
-import re
-
 def extract_prediction(content: str):
     explanation = _extract_last_tag(content, "explanation")
     evidence_used_raw = _extract_last_tag(content, "evidence_used")
@@ -386,7 +369,7 @@ def factcheck_evidence_usage_reward(
         pred = extract_prediction(content)
         pred_label = pred["label"]
         evidence_ids = pred["evidence_ids"]
-        raw = pred["evidence_used_raw"].strip().lower()
+        raw = pred["evidence_used"].strip().lower()
         ev_list = _flatten_evidence_item(ev_item)
         n_ev = len(ev_list)
 
