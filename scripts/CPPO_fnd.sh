@@ -8,10 +8,9 @@ export TORCH_SHOW_CPP_STACKTRACES=1
 export NCCL_DEBUG=INFO
 export NCCL_DEBUG_SUBSYS=COLL,GRAPH
 export NCCL_ASYNC_ERROR_HANDLING=1
-export NCCL_IB_DISABLE=1
+unset NCCL_IB_DISABLE
 unset NCCL_SHM_DISABLE
 export NCCL_P2P_DISABLE=1
-export VLLM_USE_V1=0
 accelerate launch  --config_file recipes/accelerate_configs/ddp.yaml \
     --num_processes=3  \
     --main_process_port 10909 \
