@@ -1,93 +1,39 @@
-from src.datasets.schemas import Sample
-from src.config.registry import register_prompt
-from src.config.schemas import PromptConfig
+SYSTEM_PROMPT_WITH_EVIDENCE_USED = """You are a fact-checking assistant.
 
+You will receive:
+- one claim
+- up to 5 numbered evidence items
 
-@register_prompt("default_veracity_prompt")
-def build_default_veracity_prompt(sample: Sample, prompt_cfg: PromptConfig) -> tuple[str, str, str]:
-    evidence = sample.evidence
-    top_k = prompt_cfg.extras["top_k_evidence"]
-    if evidence:
-        evidence_text = "\n".join([f"{i+1}. {ev}" for i, ev in enumerate(evidence[:top_k])])
-    else:
-        evidence_text = "No evidence provided."
-
-    system_prompt = """You are a fact-checking assistant.
-
-Given a claim and its evidence, do the following:
-1. Write a concise justification based only on the provided evidence.
-2. Predict exactly one label from:
+Your task:
+1. Use only the provided evidence.
+2. Write a brief explanation grounded in the evidence.
+3. List the evidence item numbers you actually used.
+4. Predict exactly one label from:
 PANTS_FIRE, FALSE, BARELY_TRUE, HALF_TRUE, MOSTLY_TRUE, TRUE
 
-Return exactly in this format:
+Label guide:
+- PANTS_FIRE: the claim is not only false but also wildly or ridiculously inaccurate
+- FALSE: the claim is contradicted by the evidence
+- BARELY_TRUE: the claim has a small truthful part but is mostly misleading
+- HALF_TRUE: the claim is partially supported but misses important context or mixes true and false elements
+- MOSTLY_TRUE: the claim is mostly supported, with minor caveats
+- TRUE: the claim is fully supported by the evidence
 
-<explanation>
-brief justification
-</explanation>
-<answer>
-ONE_LABEL
-</answer>
+Rules:
+- Do not use outside knowledge.
+- Do not mention evidence that is not provided.
+- In <evidence_used>, output either:
+  - none
+  - or a comma-separated list of evidence numbers, such as 1 or 1,3 or 2,4,5
+- List only the evidence items that directly support your explanation.
+- If the evidence is missing, irrelevant, or insufficient, output none in <evidence_used> and say this briefly in the explanation.
+- Keep the explanation concise.
+- Output exactly the following format and nothing else:
 
-Do not output any extra text.
+<explanation>brief justification</explanation>
+<evidence_used>1,3</evidence_used>
+<answer>HALF_TRUE</answer>
 """
 
-    user_prompt = f"""Claim:
-{sample.claim}
-
-Evidence:
-{evidence_text}
-"""
-    
-    assistant_prompt = f"""<explanation>
-{sample.explanation}
-</explanation>
-<answer>
-{sample.label.name}
-</answer>"""
-    
-    return system_prompt, user_prompt, assistant_prompt
-
-@register_prompt("label_first_veracity_prompt")
-def build_label_first_veracity_prompt(sample: Sample, prompt_cfg: PromptConfig) -> tuple[str, str, str]:
-    evidence = sample.evidence
-    top_k = prompt_cfg.extras["top_k_evidence"]
-    if evidence:
-        evidence_text = "\n".join([f"{i+1}. {ev}" for i, ev in enumerate(evidence[:top_k])])
-    else:
-        evidence_text = "No evidence provided."
-
-    system_prompt = """You are a fact-checking assistant.
-
-Given a claim and its evidence, do the following:
-1. Predict exactly one label from:
-PANTS_FIRE, FALSE, BARELY_TRUE, HALF_TRUE, MOSTLY_TRUE, TRUE
-2. Write a concise justification based only on the provided evidence.
-
-
-Return exactly in this format:
-
-<answer>
-ONE_LABEL
-</answer>
-<explanation>
-brief justification
-</explanation>
-
-Do not output any extra text.
-"""
-
-    user_prompt = f"""Claim:
-{sample.claim}
-
-Evidence:
-{evidence_text}
-"""
-    
-    assistant_prompt = f"""<answer>
-{sample.label.name}
-</answer>
-<explanation>
-{sample.explanation}
-</explanation>"""
-    
-    return system_prompt, user_prompt, assistant_prompt
+if __name__ == "__main__":
+    print(repr(SYSTEM_PROMPT_WITH_EVIDENCE_USED))
