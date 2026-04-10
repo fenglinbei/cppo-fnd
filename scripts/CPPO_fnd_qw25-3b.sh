@@ -22,7 +22,7 @@ accelerate launch  --config_file recipes/accelerate_configs/ddp.yaml \
     --main_process_port 10909 \
     src/open_r1/grpo_fnd.py \
     --config recipes/fnd/Qwen2.5-3B-Instruct.yaml \
-    --output_dir=output/fnd/ \
+    --output_dir=output/fnd/Qwen-2.5-3B/ \
     --save_strategy='best' \
     --eval_steps=100 --max_completion_length=1024 \
     --model_name_or_path=./models/Qwen2.5-3B-Instruct \
