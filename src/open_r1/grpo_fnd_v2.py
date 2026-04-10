@@ -252,7 +252,7 @@ def main(script_args, training_args, model_args):
         prompt.append({"role": "user", "content": f"Claim:\n{claim}\n\nEvidence:\n{evidence_text}\n"})
         return {"prompt": prompt, "gold_label": example["label"]}
     
-    def make_conversation(example, training_args):
+    def make_conversation(example):
         prompt = []
         if training_args.system_prompt is not None:
             prompt.append({"role": "system", "content": training_args.system_prompt})
