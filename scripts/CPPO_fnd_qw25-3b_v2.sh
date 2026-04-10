@@ -17,6 +17,7 @@ unset TORCH_SHOW_CPP_STACKTRACES
 unset NCCL_IB_DISABLE
 unset NCCL_SHM_DISABLE
 export NCCL_P2P_DISABLE=1
+export VLLM_WOKRER_MULTIPROC_METHOD="spawn"
 accelerate launch  --config_file recipes/accelerate_configs/ddp.yaml \
     --num_processes=3  \
     --main_process_port 10909 \
